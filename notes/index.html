@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PasteMini — Minimal Notes</title>
+  <meta name="description" content="Catatan minimalis dengan Rich Text & Coding (textarea), share URL/WA, slug kustom, dan simpan/ambil dari Google Sheet. Siap untuk GitHub Pages." />
+  <!--
+    ================== GOOGLE SHEETS BACKEND (APPS SCRIPT) ==================
+    1) Buat Google Spreadsheet. Pastikan sheet bernama 'Sheet1' dengan header persis:
+    Code | Title | Text Note | Created Date | Edit Date | Link Notes
+    2) Extensions → Apps Script → tempel kode di bawah → Deploy → New deployment → Web app
+       - Execute as: Me   •   Who has access: Anyone
+       - Salin URL Web App dan ganti konstanta SHEET_API di bawah.
+
+    ----- BEGIN APPS SCRIPT -----
+    // Skema kolom: Code | Title | Text Note | Created Date | Edit Date | Link Notes
+    // Frontend mengirim POST dengan Content-Type: text/plain (tanpa preflight), body JSON string.
+    const SHEET_NAME = 'Sheet1';
+    const COL = { CODE:1, TITLE:2, TEXT:3, CREATED:4, EDITED:5, LINK:6 };
+    function _json(o){ return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+    function _findRowByCode(sh, code){ const vals = sh.getDataRange().getValues(); return vals.findIndex(r => (r[0]||'').toString().trim()===code); }
+
+    function doGet(e){
+      const sh = SpreadsheetApp.getActive().getSheetByName(SHEET_NAME);
+      const act = (e.parameter.action||'').toLowerCase();
+      if (act==='ping') return _json({ok:true, ts:new Date().toISOString()});
+      if (act==='get'){
+        const code = (e.parameter.code||'').trim();
+        const idx = _findRowByCode(sh, code);
+        if (idx>-1){
+          const row = sh.getRange(idx+1,1,1,6).getValues()[0];
+          return _json({ok:true, row:{
+            code:row[COL.CODE-1], title:row[COL.TITLE-1], text:row[COL.TEXT-1],
+            createdAt:row[COL.CREATED-1], editedAt:row[COL.EDITED-1], link:row[COL.LINK-1]
+          }});
+        }
+        return _json({ok:false, error:'not_found'});
+      }
+      return _json({ok:false, error:'invalid_action'});
+    }
+
+    function doPost(e){
+      const sh = SpreadsheetApp.getActive().getSheetByName(SHEET_NAME);
+      const body = JSON.parse(e.postData.contents||'{}');
+      const action = (body.action||'save').toLowerCase();
+      const code = (body.code||'').trim();
+      let title = body.title||'';
+      let text = body.text||'';
+      const link = body.link||'';
+      // Guard untuk klien lama yang mengirim JSON di field "text" (berisi {id,title,content,...})
+      if (text && typeof text === 'string' && text.trim().charAt(0) === '{'){
+        try{
+          const parsed = JSON.parse(text);
+          if (parsed && typeof parsed === 'object'){
+            if (!title && parsed.title) title = String(parsed.title);
+            if (parsed.content != null) text = String(parsed.content);
+          }
+        }catch(err){ /* ignore */ }
+      }
+      if (!code) return _json({ok:false, error:'missing_code'});
+      const now = new Date();
+      const idx = _findRowByCode(sh, code);
+
+      if (action==='delete'){
+        if (idx>-1){ sh.deleteRow(idx+1); return _json({ok:true, deleted:true, code}); }
+        return _json({ok:false, error:'not_found'});
+      }
+
+      if (action==='save'){
+        if (idx>-1){
+          // Update: Title, Text, Edited, Link (Created tetap)
+          sh.getRange(idx+1, COL.TITLE).setValue(title);
+          sh.getRange(idx+1, COL.TEXT).setValue(text);
+          sh.getRange(idx+1, COL.EDITED).setValue(now);
+          sh.getRange(idx+1, COL.LINK).setValue(link);
+        } else {
+          // Insert baru
+          sh.appendRow([code, title, text, now, now, link]);
+        }
+        return _json({ok:true, code});
+      }
+
+      return _json({ok:false, error:'invalid_action'});
+    }
+    ----- END APPS SCRIPT -----
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- CodeMirror (HTML code editor for Coding mode) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/theme/neo.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/xml/xml.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/javascript/javascript.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/css/css.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+
+  <!-- LZ-String untuk kompresi -->
+  <script defer src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+
+  <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.8/css/line.css">
+  <style>
+    :root{
+      --bg: #f7f7fb;       /* latar putih lembut */
+      --card: #ffffff;     /* kartu putih */
+      --text: #0f172a;     /* slate-900 */
+      --muted:#64748b;     /* slate-500 */
+      --ring:#e5e7eb;      /* gray-200 */
+      --shadow: 0 8px 24px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.06);
+      --radius: 14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto; color:var(--text); background:var(--bg);}    
+
+    /* Navbar sederhana (ada Home atas) */
+    header{position:sticky; top:0; z-index:10; background:rgba(255,255,255,.9); backdrop-filter:saturate(180%) blur(8px); border-bottom:1px solid var(--ring);}    
+    .nav{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 16px}
+    .brand{font-weight:700}
+    .spacer{flex:1}
+    .btn{appearance:none;border:1px solid var(--ring);background:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;box-shadow:var(--shadow);font-weight:600}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.ghost{background:#fff;border:1px solid var(--ring);box-shadow:none}
+
+    /* Halaman — tanpa frame 9:16, hanya dua tombol di tengah */
+    .container{max-width:960px;margin:0 auto;padding:16px}
+    #home{min-height:calc(100vh - 60px);display:grid;place-items:center}
+    .home-actions{display:grid;gap:14px;grid-template-columns:1fr; width:min(320px,90vw)}
+
+    /* Editor — kartu putih */
+    #editor{display:none}
+    .card{background:var(--card); border:1px solid var(--ring);border-radius:var(--radius); box-shadow:var(--shadow); padding:14px; display:grid; gap:12px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .input,.select{appearance:none;border:1px solid var(--ring);background:#fff;border-radius:10px;padding:10px 12px;font:inherit;min-width:0}
+    .input:focus,.select:focus{outline:2px solid #00000010}
+    .grow{flex:1 1 auto}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border-radius:999px;border:1px solid var(--ring);background:#fff}
+    .icon-btn{border:1px solid var(--ring); background:#fff; width:34px;height:34px;border-radius:8px;display:grid;place-items:center;cursor:pointer}
+
+    /* Rich Text Editor */
+    .rte-toolbar{display:flex;gap:6px;flex-wrap:wrap}
+    .rte-toolbar .icon-btn{width:auto;padding:8px 10px}
+    .rte{min-height:260px;border:1px solid var(--ring);border-radius:10px;padding:12px;background:#fff}
+    .rte:focus{outline:2px solid #00000010}
+
+    /* Coding (textarea) */
+    #codeWrap{display:none}
+    .codebox{min-height:320px;border:1px solid var(--ring);border-radius:10px;padding:12px;background:#fff;font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;white-space:pre;overflow:auto}
+
+    /* Meta */
+    .meta{display:flex;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+    .meta a{color:inherit}
+
+    /* Modal dasar */
+    .modal{position:fixed;inset:0;background:rgba(15,23,42,.35);display:none;align-items:center;justify-content:center;padding:20px}
+    .dialog{width:100%;max-width:420px;background:#fff;border:1px solid var(--ring);border-radius:14px;box-shadow:var(--shadow);padding:16px;display:grid;gap:12px}
+
+    /* Test results table */
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid var(--ring);padding:8px;text-align:left}
+    .pass{color:#16a34a;font-weight:700}
+    .fail{color:#dc2626;font-weight:700}
+  .navlink{color:var(--muted);text-decoration:none;font-weight:600}
+    .navlink:hover{color:var(--text);text-decoration:underline}
+    #cmHost{height:360px;border:1px solid var(--ring);border-radius:10px;overflow:hidden;background:#fff}
+    .CodeMirror{height:100%; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+    .urlRow{display:inline-flex;gap:8px;align-items:center;max-width:100%;overflow:hidden;white-space:nowrap}
+    .urlRow a{max-width:70vw;overflow:hidden;text-overflow:ellipsis;display:inline-block}
+    .icon-inline{appearance:none;border:1px solid var(--ring);background:#fff;border-radius:8px;width:30px;height:30px;display:grid;place-items:center;cursor:pointer}
+    .icon-inline:hover{transform:translateY(-1px)}
+  .busy{position:fixed;inset:0;background:rgba(15,23,42,.15);display:none;align-items:center;justify-content:center;z-index:1000}
+    .busy-box{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--ring);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px}
+    .busy-box .uil{font-size:20px;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #toast{position:fixed;right:16px;bottom:16px;display:grid;gap:8px;z-index:1001}
+    .toast{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--ring);border-left:4px solid #3b82f6;border-radius:12px;box-shadow:var(--shadow);padding:10px 12px;opacity:0;transform:translateY(8px);animation:toastIn .18s ease-out forwards}
+    .toast.success{border-left-color:#16a34a}
+    .toast.error{border-left-color:#dc2626}
+    .toast .uil{font-size:18px}
+    @keyframes toastIn{to{opacity:1;transform:none}}
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav">
+      <div class="brand">PasteMini</div>
+      <div class="spacer"></div>
+      <a id="navStatus" class="navlink" href="#" style="font-size:11px;" title="Cek Status Server">Cek Status Server</a>
+      <button id="navCreateNew" class="btn" style="display:none;margin-left:12px;background-color:#fc4503;color:white;">Create New</button>
+      <button id="navHome" class="btn ghost" style="margin-left:12px">Home</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- HOME: hanya dua tombol center, tanpa kotak -->
+    <section id="home">
+      <div class="home-actions">
+        <button id="homeCreate" class="btn">Create Notes</button>
+        <button id="homeLoad" class="btn ghost">Load Notes</button>
+      </div>
+    </section>
+
+    <!-- EDITOR -->
+    <section id="editor" class="card">
+      <div class="row">
+        <input id="title" class="input grow" placeholder="Judul catatan" />
+        <select id="mode" class="select">
+          <option value="text">Rich Text</option>
+          <option value="code">Coding</option>
+        </select>
+        <select id="lang" class="select" title="Bahasa" style="display:none">
+          <option value="plain" selected>Plain</option>
+          <option value="html">HTML</option>
+          <option value="javascript">JavaScript</option>
+          <option value="markdown">Markdown</option>
+          <option value="python">Python</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <input id="urlView" class="input grow" value="https://example.com/?n=demo" readonly />
+        <button id="btnShareWA" class="icon-inline" title="Bagikan ke WhatsApp" aria-label="Share to WhatsApp"><i class="uil uil-share"></i></button>
+        <button id="btnCopyURL" class="icon-inline" title="Salin URL" aria-label="Copy URL"><i class="uil uil-copy"></i></button>
+        <button id="editSlug" class="icon-btn" title="Edit custom URL">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+        </button>
+        <input id="slug" class="input" placeholder="custom-slug" style="display:none"/>
+      </div>
+
+      <!-- Rich Text -->
+      <div id="rteWrap">
+        <div class="rte-toolbar">
+          <button class="icon-btn" data-cmd="bold"><b>B</b></button>
+          <button class="icon-btn" data-cmd="italic"><i>I</i></button>
+          <button class="icon-btn" data-cmd="underline"><u>U</u></button>
+          <button class="icon-btn" data-cmd="insertUnorderedList">• List</button>
+          <button class="icon-btn" data-cmd="insertOrderedList">1. List</button>
+          <button class="icon-btn" data-cmd="formatBlock" data-val="H1">H1</button>
+          <button class="icon-btn" data-cmd="formatBlock" data-val="H2">H2</button>
+          <button class="icon-btn" id="linkBtn">Link</button>
+          <input type="color" id="colorPick" title="Warna teks" />
+          <button class="icon-btn" id="clearFmt">Clear</button>
+        </div>
+        <div id="rte" class="rte" contenteditable="true" spellcheck="false"></div>
+      </div>
+
+      <!-- Coding (CodeMirror HTML editor) -->
+      <div id="cmWrap" style="display:none">
+        <div id="cmHost"></div>
+      </div>
+
+      <div class="row" id="actionRow">
+        <div class="spacer"></div>
+        <button id="btnSaveSheet" class="btn">Save to Sheet</button>
+        <button id="btnDeleteSheet" class="btn ghost">Delete from Sheet</button>
+        <button id="btnDelete" class="btn ghost">Delete</button>
+      </div>
+
+      <div class="meta"><span id="status">Ready</span></div>
+    </section>
+  </main>
+
+  <!-- Modal Load dari Google Sheet -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div class="dialog">
+      <h3>Load dari Google Sheet</h3>
+      <input id="inpCode" class="input" placeholder="Masukkan Kode (5 karakter), mis: aB3xZ"/>
+      <div class="row" style="justify-content:end">
+        <button id="btnCancel" class="btn ghost">Batal</button>
+        <button id="btnLoadSheet" class="btn">Load</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tests -->
+  <div id="testModal" class="modal" role="dialog" aria-modal="true">
+    <div class="dialog">
+      <h3>Cek Status Server</h3>
+      <div id="testBody">Menjalankan tes…</div>
+      <div class="row" style="justify-content:end">
+        <button id="btnCloseTests" class="btn">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // ================= CONFIG =================
+  const SHEET_API = 'https://script.google.com/macros/s/AKfycbwozB5JPJzFBBpsDfIM6ktTunJfn3K3Qi_36ffleY45ZSvsJArYYnNo0EI2UYYZ-JLF/exec'; // GANTI dengan URL Web App milikmu
+  const SHEET_TIMEOUT_MS = 8000;
+
+  // ================ HELPERS ================
+  const $ = sel => document.querySelector(sel);
+  const byId = id => document.getElementById(id);
+  const status = msg => { const s=byId('status'); if (s) s.textContent = msg; };
+  function makeToast(msg, type='info'){
+    const host = byId('toast'); if (!host) return; const t = document.createElement('div');
+    t.className = `toast ${type}`; const icon = type==='success'?'check-circle':(type==='error'?'times-circle':'info-circle');
+    t.innerHTML = `<i class="uil uil-${icon}"></i><span>${msg}</span>`;
+    host.appendChild(t);
+    setTimeout(()=>{ t.style.transition='opacity .2s ease, transform .2s ease'; t.style.opacity='0'; t.style.transform='translateY(6px)'; setTimeout(()=>t.remove(), 220); }, 2200);
+  }
+  function toast(msg, type){
+    status(msg);
+    if (!type){ const m = (msg||'').toLowerCase(); if (m.includes('gagal')||m.includes('error')) type='error'; else if (m.includes('tersimpan')||m.includes('dimuat')||m.includes('terhapus')) type='success'; else type='info'; }
+    makeToast(msg, type);
+    setTimeout(()=>status('Ready'), 1600);
+  }
+  function showBusy(text='Memproses…'){ const b=byId('busy'); if (!b) return; byId('busyText').textContent=text; b.style.display='flex'; }
+  function hideBusy(){ const b=byId('busy'); if (!b) return; b.style.display='none'; }
+  const copy = async (txt) => { try { await navigator.clipboard.writeText(txt); toast('Disalin'); } catch(e){ console.warn(e); } };
+  const makeId = (len=8) => { const arr = new Uint8Array(len); crypto.getRandomValues(arr); return Array.from(arr, b => (b % 36).toString(36)).join(''); };
+  const makeCode5 = () => { const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'; const arr=new Uint32Array(5); crypto.getRandomValues(arr); let out=''; for(let i=0;i<5;i++){ out += chars[arr[i]%chars.length]; } return out; };
+  const slugify = s => (s||'').trim().replace(/[^A-Za-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  const enc = (obj) => LZString.compressToEncodedURIComponent(JSON.stringify(obj));
+  const dec = (str) => JSON.parse(LZString.decompressFromEncodedURIComponent(str));
+  // build JSON payload (disimpan di Sheet) — lebih mudah dibaca & aman
+  const buildPayload = (note) => JSON.stringify({ id: note.id, title: note.title, content: note.content, mode: note.mode, slug: note.slug });
+  // decoder robust: dukung JSON polos & LZString lawas
+  const safeDecodePayload = (p) => {
+    if (!p) return null;
+    // 1) coba JSON langsung
+    try { const j = JSON.parse(p); if (j && typeof j==='object') return j; } catch(_){ }
+    // 2) coba LZ-String (kompres lama)
+    try { const j = dec(p); if (j && typeof j==='object') return j; } catch(_){ }
+    // 3) fallback: p dianggap teks biasa
+    return { id: makeId(), title: '(untitled)', content: String(p), mode: 'text', slug: currentSlug };
+  };
+  const isSheetConfigured = () => SHEET_API && !SHEET_API.includes('PASTE_WEB_APP_URL');
+
+  async function requestJSON(url, options={}){
+    const ac = new AbortController();
+    const timer = setTimeout(()=>ac.abort(), SHEET_TIMEOUT_MS);
+    try{
+      const res = await fetch(url, { mode:'cors', credentials:'omit', redirect:'follow', ...options, signal: ac.signal });
+      clearTimeout(timer);
+      const ct = (res.headers && res.headers.get('content-type')) || '';
+      if (!res.ok){
+        const text = await res.text().catch(()=>res.statusText);
+        return { ok:false, error:`HTTP ${res.status} ${res.statusText}${ct?` (${ct})`:''}: ${text.slice(0,200)}` };
+      }
+      if (ct.includes('application/json')){
+        const data = await res.json();
+        return { ok:true, data };
+      } else {
+        // Kadang Apps Script mengembalikan HTML jika belum publik; coba parse JSON dulu
+        const text = await res.text().catch(()=>'(no body)');
+        try { const data = JSON.parse(text); return { ok:true, data }; }
+        catch(e){ return { ok:false, error:`Unexpected response (content-type: ${ct||'unknown'})`, body:text.slice(0,200) }; }
+      }
+    }catch(err){
+      clearTimeout(timer);
+      if (err.name === 'AbortError') return { ok:false, error:'Timeout – server tidak merespons' };
+      return { ok:false, error: (err && err.message) || 'Failed to fetch' };
+    }
+  }
+
+  // ================ STATE ================
+  let currentId = null;  // internal id
+  let currentSlug = '';
+
+  const storeKey = (idOrSlug) => `pm:note:${idOrSlug}`; // masih dipakai untuk boot via ?n (fallback lokal jika mau tambahkan nanti)
+
+  // ============== EDITOR I/O ==============
+  function getEditorValue(){
+    const mode = byId('mode').value;
+    if (mode === 'code' && cm) return cm.getValue();
+    return byId('rte').innerText;
+  }
+  function setEditorValue(val){
+    const mode = byId('mode').value;
+    if (mode === 'code' && cm) cm.setValue(val||'');
+    else byId('rte').innerText = val||'';
+  }
+  function getPlainText(){
+    return (byId('mode').value === 'code' && cm) ? cm.getValue() : byId('rte').innerText;
+  }
+  
+
+  // Rich Text actions
+  function rteCmd(cmd, val=null){ document.execCommand(cmd, false, val); updateShareArtifacts(); }
+
+  // ============== SHEET I/O ==============
+  async function saveToSheet(){
+    if (!isSheetConfigured()){ toast('SHEET_API belum dikonfigurasi','error'); return; }
+    if (!navigator.onLine){ toast('Offline: tidak bisa simpan ke Sheet','error'); return; }
+    showBusy('Menyimpan ke Sheet…');
+    try{
+      if (!currentId) currentId = makeId();
+      if (!currentSlug) currentSlug = makeCode5();
+      byId('slug').value = currentSlug; byId('slug').dataset.manual = '1';
+      const note = buildNoteObj();
+      const fullLink = buildFullLink();
+      const code = currentSlug; // sheet code otomatis mengikuti URL (slug)
+      const { ok, data, error } = await requestJSON(SHEET_API, {
+        method:'POST',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action:'save', code, title: note.title||'', text: getPlainText()||'', link: fullLink })
+      });
+      if (!ok){ console.warn(error); toast('Gagal simpan Sheet: ' + error, 'error'); return; }
+      if (data && data.ok){ toast('Tersimpan (Sheet)','success'); updateURLView(); }
+      else { toast('Gagal simpan Sheet','error'); }
+    } finally { hideBusy(); }
+  }
+
+  async function deleteFromSheet(){
+    if (!isSheetConfigured()){ toast('SHEET_API belum dikonfigurasi','error'); return; }
+    if (!navigator.onLine){ toast('Offline: tidak bisa delete di Sheet','error'); return; }
+    const code = currentSlug || byId('slug').value.trim();
+    if (!code){ toast('Belum ada slug/kode','error'); return; }
+    const okGo = confirm(`Hapus catatan di Sheet dengan kode "${code}"?`);
+    if (!okGo) return;
+    showBusy('Menghapus di Sheet…');
+    try{
+      const { ok, data, error } = await requestJSON(SHEET_API, {
+        method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action:'delete', code })
+      });
+      if (!ok){ console.warn(error); toast('Gagal delete Sheet: ' + error, 'error'); return; }
+      if (data && data.ok){ toast('Terhapus di Sheet','success'); clearEditor(); showHome(); }
+      else { toast(data && data.error ? `Gagal delete: ${data.error}` : 'Gagal delete Sheet','error'); }
+    } finally { hideBusy(); }
+  }
+
+  async function loadFromSheet(code){
+    if (!isSheetConfigured()){ toast('SHEET_API belum dikonfigurasi','error'); return; }
+    if (!navigator.onLine){ toast('Offline: tidak bisa load dari Sheet','error'); return; }
+    showBusy('Memuat dari Sheet…');
+    try{
+      const { ok, data, error } = await requestJSON(`${SHEET_API}?action=get&code=${encodeURIComponent(code)}`);
+      if (!ok){ console.warn(error); toast('Gagal load Sheet: ' + error, 'error'); return; }
+      if (data && data.ok && data.row){
+        const txt = (data.row.text != null) ? String(data.row.text) : (data.row.payload ? (safeDecodePayload(data.row.payload).content||'') : '');
+        currentSlug = code; // sheet code mengikuti URL
+        setFromNoteObj({ id: makeId(), title: data.row.title||'', content: txt, mode: 'text', slug: currentSlug, updatedAt: Date.now() });
+        toast('Dimuat (Sheet)','success'); hideModal();
+      } else { toast('Kode tidak ditemukan','error'); }
+    } finally { hideBusy(); }
+  }
+
+  // ============== HELPERS ==============
+  function buildNoteObj(){ return { id: currentId || makeId(), title: byId('title').value || '', content: getEditorValue() || '', mode: byId('mode').value || 'text', slug: currentSlug || '', updatedAt: Date.now() }; }
+  function setFromNoteObj(note){ currentId = note.id; currentSlug = note.slug || ''; byId('title').value = note.title || ''; byId('mode').value = note.mode || 'text'; toggleModeUI(); setEditorValue(note.content || ''); showEditor(); updateShareArtifacts(); }
+  function clearEditor(){ currentId=null; currentSlug=''; byId('title').value=''; byId('mode').value='text'; toggleModeUI(); setEditorValue(''); }
+
+  // URL/Slug & Share
+  function getBase(){
+    const o = location.origin || '';
+    if (!o || /nullsrcdoc|^null$/.test(o)) return 'https://example.com';
+    return o;
+  }
+  function buildFullLink(){
+    const base = getBase() + location.pathname;
+    const slug = currentSlug ? `?n=${encodeURIComponent(currentSlug)}` : '?n=demo';
+    return base + slug;
+  }
+  function updateURLView(){
+    const full = buildFullLink();
+    const el = byId('urlView');
+    if (el){ if (el.tagName === 'INPUT') el.value = full; else el.textContent = full; }
+    const openWA = ()=> window.open(`https://wa.me/?text=${encodeURIComponent(full)}`, '_blank');
+    const btnWA = byId('btnShareWA'); if (btnWA) btnWA.onclick = (e)=>{ e.preventDefault(); openWA(); };
+    const btnCopy = byId('btnCopyURL'); if (btnCopy) btnCopy.onclick = (e)=>{ e.preventDefault(); copy(full); };
+  };
+
+  function autoSlugFromTitle(){ if (!currentSlug){ currentSlug = makeCode5(); byId('slug').value = currentSlug; } }
+  function enableSlugEdit(){ byId('slug').style.display='inline-block'; byId('slug').focus(); byId('slug').select(); byId('slug').dataset.manual = '1'; }
+
+  function updateShareArtifacts(){ updateURLView(); }
+  function importFromCode(code){ try{ const note = dec(code); setFromNoteObj({ id: note.id || makeId(), title: note.title || '', content: note.content || '', mode: note.mode || 'text', slug: slugify(note.slug || ''), updatedAt: Date.now() }); toast('Kode dimuat'); }catch(err){ console.error(err); toast('Kode tidak valid'); } }
+
+  // ============== UI FLOW ==============
+  function showHome(){ byId('home').style.display='grid'; byId('editor').style.display='none'; const c=byId('navCreateNew'); if(c) c.style.display='none'; }
+  function showEditor(){ byId('home').style.display='none'; byId('editor').style.display='grid'; const c=byId('navCreateNew'); if(c) c.style.display='inline-block'; }
+  function createNew(){ clearEditor(); currentId = makeId(); currentSlug = makeCode5(); byId('slug').value = currentSlug; showEditor(); updateShareArtifacts(); }
+  function showModal(){ byId('modal').style.display='flex'; byId('inpCode').value=''; byId('inpCode').focus(); }
+  function hideModal(){ byId('modal').style.display='none'; }
+  function showTests(){ byId('testModal').style.display='flex'; runSelfTests(); }
+  function hideTests(){ byId('testModal').style.display='none'; }
+
+  let cm = null;
+  function ensureCodeMirror(){
+    // Inisialisasi sekali; refresh jika sudah ada
+    if (cm){ setTimeout(()=>cm.refresh(), 0); return cm; }
+    if (!window.CodeMirror){
+      // Library belum siap, coba lagi sebentar
+      setTimeout(ensureCodeMirror, 120);
+      return null;
+    }
+    cm = CodeMirror(document.getElementById('cmHost'), {
+      value: '',
+      mode: 'htmlmixed',
+      theme: 'neo',
+      lineNumbers: true,
+      lineWrapping: true
+    });
+    // Ekspos untuk tes/debug
+    window.cm = cm;
+    cm.on('change', updateShareArtifacts);
+    setTimeout(()=>cm.refresh(), 0);
+    return cm;
+  }
+
+  function toggleModeUI(){
+    const mode = byId('mode').value; const rteWrap = byId('rteWrap'); const cmWrap = byId('cmWrap'); const langSel = byId('lang');
+    if (mode==='code'){
+      rteWrap.style.display='none'; cmWrap.style.display='block'; langSel.style.display='none';
+      ensureCodeMirror();
+      if (cm && !cm.getValue()) cm.setValue(byId('rte').innerText || '');
+    } else {
+      cmWrap.style.display='none'; langSel.style.display='none';
+      if (cm) byId('rte').innerText = cm.getValue();
+      rteWrap.style.display='block';
+    }
+  }
+
+  // ============== EVENTS ==============
+  // Nav / Home
+  byId('navHome').onclick = showHome; byId('navCreateNew').onclick = createNew;
+  byId('homeCreate').onclick = createNew;
+  byId('homeLoad').onclick = showModal;
+  byId('navStatus').onclick = (e)=>{ e.preventDefault(); showTests(); };
+  byId('btnCloseTests').onclick = hideTests;
+
+  // Modal
+  byId('btnCancel').onclick = hideModal; byId('btnLoadSheet').onclick = ()=>{ const code=byId('inpCode').value.trim(); if (code) loadFromSheet(code); };
+
+  // Save/Delete
+  byId('btnSaveSheet').onclick = saveToSheet;
+  byId('btnDeleteSheet').onclick = deleteFromSheet;
+  byId('btnDelete').onclick = ()=>{ if (!currentId){ toast('Belum ada catatan'); return; } const ok = confirm('Hapus catatan ini?'); if (!ok) return; clearEditor(); showHome(); toast('Dihapus'); };
+
+  // Mode & Lang
+  byId('mode').addEventListener('change', ()=>{ toggleModeUI(); updateShareArtifacts(); });
+  byId('lang').addEventListener('change', ()=>{ /* placeholder: bisa dipakai untuk logic tambahan */ });
+
+  // Title & Slug
+  byId('title').addEventListener('input', updateShareArtifacts);
+  byId('editSlug').onclick = enableSlugEdit;
+  byId('slug').addEventListener('input', ()=>{ currentSlug = slugify(byId('slug').value); updateShareArtifacts(); });
+
+  // RTE toolbar
+  document.querySelectorAll('.rte-toolbar .icon-btn[data-cmd]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ const cmd = btn.dataset.cmd; const val = btn.dataset.val || null; if (cmd==='formatBlock' && val) rteCmd(cmd, `<${val}>`); else rteCmd(cmd, val); });
+  });
+  byId('linkBtn').onclick = ()=>{ const url = prompt('Masukkan URL:','https://'); if (url) rteCmd('createLink', url); };
+  byId('clearFmt').onclick = ()=>rteCmd('removeFormat');
+  byId('colorPick').addEventListener('input', (e)=>rteCmd('foreColor', e.target.value));
+
+  // Deep link
+  function bootFromURL(){
+    const params = new URLSearchParams(location.search);
+    const slug = params.get('n');
+    const hash = location.hash;
+    if (hash.startsWith('#c=')){
+      importFromCode(hash.slice(3));
+      return;
+    }
+    if (slug){
+      currentSlug = slug;
+      if (isSheetConfigured()){
+        loadFromSheet(slug);
+        return;
+      }
+    }
+    showHome();
+    updateURLView();
+  }
+
+  // ============== SELF TESTS ==============
+  async function runSelfTests(){
+    const rows = [];
+    function add(name, pass, note=''){ rows.push(`<tr><td>${name}</td><td class="${pass?'pass':'fail'}">${pass?'PASS':'FAIL'}</td><td>${note||''}</td></tr>`); }
+
+    // T0: Create button opens editor
+    try{ showHome(); byId('homeCreate').click(); const ok = getComputedStyle(byId('editor')).display !== 'none'; add('Create button opens editor', ok); }
+    catch(e){ add('Create button opens editor', false, e.message); }
+
+    // T1: LZ roundtrip
+    try{ const obj={a:1,b:'x'}; const z=enc(obj); const back=dec(z); add('LZ roundtrip', JSON.stringify(obj)===JSON.stringify(back)); }
+    catch(e){ add('LZ roundtrip', false, e.message); }
+
+    // T2: URL/slug live link tidak null (input URL di bawah judul)
+    try{
+      currentSlug='aB3xZ'; updateURLView();
+      const el = byId('urlView');
+      const val = el ? (el.tagName==='INPUT' ? el.value : el.textContent) : '';
+      add('Live link', val.includes('?n=aB3xZ'));
+    }catch(e){ add('Live link', false, e.message); }
+
+    // T3: Coding editor (CodeMirror) bisa diketik
+    try{
+      byId('mode').value='code'; toggleModeUI();
+      let tries=0; while(!window.cm && tries<30){ await new Promise(r=>setTimeout(r,100)); tries++; }
+      if (window.cm){ cm.setValue('<h1>Hi</h1>'); }
+      const ok = (window.cm ? cm.getValue() : '').includes('<h1>Hi');
+      add('Coding editor input', ok, window.cm?'':'CodeMirror belum siap');
+    }catch(e){ add('Coding editor input', false, e.message); }
+
+    // T3b: RTE → Plain text extraction (bukan HTML)
+    try{
+      byId('mode').value='text'; toggleModeUI();
+      byId('rte').innerHTML = '<b>Hai</b> dunia';
+      const plain = getPlainText();
+      add('RTE -> Plain text', plain==='Hai dunia');
+    }catch(e){ add('RTE -> Plain text', false, e.message); }
+
+    // T4: Sheet config present
+    // T6: Decoder mendukung JSON polos (format simpan terbaru)
+    try{
+      const payload = buildPayload({ id:'1', title:'t', content:'hello', mode:'text', slug:'s' });
+      const obj = safeDecodePayload(payload);
+      add('Decode JSON payload', obj && obj.content==='hello');
+    }catch(e){ add('Decode JSON payload', false, e.message); }
+
+    // T7: Decoder fallback LZ kompatibel (format lama)
+    try{
+      const lz = enc({ id:'1', title:'t', content:'world', mode:'text', slug:'s' });
+      const obj = safeDecodePayload(lz);
+      add('Decode LZ payload', obj && obj.content==='world');
+    }catch(e){ add('Decode LZ payload', false, e.message); }
+
+    // T8: Delete from Sheet button present
+    try{ const el = byId('btnDeleteSheet'); add('Delete from Sheet button present', !!el); }
+    catch(e){ add('Delete from Sheet button present', false, e.message); }
+
+    add('Sheet API configured', isSheetConfigured());
+
+    // T5: Sheet ping (opsional jika configured)
+    if (isSheetConfigured()){
+      const r = await requestJSON(`${SHEET_API}?action=ping`);
+      add('Sheet ping', !!r.ok && r.data && r.data.ok, r.error||'');
+    }else{
+      add('Sheet ping', true, 'Lewati (belum dikonfigurasi)');
+    }
+
+    byId('testBody').innerHTML = `<table><thead><tr><th>Test</th><th>Status</th><th>Catatan</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  }
+
+  // Init
+  toggleModeUI(); bootFromURL();
+})();
+</script>
+<div id="busy" class="busy" aria-hidden="true">
+  <div class="busy-box"><i class="uil uil-spinner-alt"></i><span id="busyText">Memproses…</span></div>
+</div>
+<div id="toast" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
