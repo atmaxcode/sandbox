@@ -27,16 +27,19 @@
     }
 
     /* Efek blur dan transformasi pada kartu yang tidak di-hover */
-    #cardsGrid.dim > article:not(.hovered) {
+    #cardsGrid > article {
+      transition: filter 0.28s ease, transform 0.28s ease;
+    }
+
+    #cardsGrid > article:not(.hovered) {
       filter: blur(4px) brightness(1.06) saturate(0); /* Efek blur */
       transform: scale(0.98); /* Mengurangi ukuran kartu */
       box-shadow: none !important;
       background: rgba(255, 255, 255, 0.62) !important;
-      transition: all 0.28s ease;
     }
 
-    #cardsGrid.dim > article:not(.hovered) .media > img,
-    #cardsGrid.dim > article:not(.hovered) .media > video {
+    #cardsGrid > article:not(.hovered) .media > img,
+    #cardsGrid > article:not(.hovered) .media > video {
       filter: grayscale(100%) saturate(0) brightness(0.9); /* Mengubah gambar/video menjadi abu-abu */
     }
 
@@ -58,7 +61,7 @@
       <!-- Grid untuk dua kartu -->
       <div id="cardsGrid" class="grid md:grid-cols-2 gap-8">
         <!-- Kartu pertama -->
-        <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition hover:scale-105 hover:shadow-xl">
+        <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
           <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#efefef"></div>
           <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden">
             <!-- Media Gambar (Opsional) -->
@@ -84,7 +87,7 @@
         </article>
 
         <!-- Kartu kedua -->
-        <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition hover:scale-105 hover:shadow-xl">
+        <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
           <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#c6ff57"></div>
           <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden">
             <!-- Media Gambar (Opsional) -->
@@ -118,5 +121,21 @@
       <div class="flex gap-3"><a href="#">Kebijakan Privasi</a><a href="#">Kontak</a></div>
     </div>
   </footer>
+
+  <script>
+    // Menambahkan event listener untuk hover
+    const cards = document.querySelectorAll('#cardsGrid article');
+    
+    cards.forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        document.querySelectorAll('#cardsGrid article').forEach(el => el.classList.add('dim'));
+        card.classList.add('hovered');
+      });
+      card.addEventListener('mouseleave', () => {
+        document.querySelectorAll('#cardsGrid article').forEach(el => el.classList.remove('dim'));
+        card.classList.remove('hovered');
+      });
+    });
+  </script>
 </body>
 </html>
