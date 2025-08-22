@@ -15,6 +15,26 @@
       backdrop-filter: blur(14px) saturate(1.2);
       -webkit-backdrop-filter: blur(14px) saturate(1.2);
       box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.25);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    /* Hover effect to blur the rest of the cards */
+    #cardsGrid.dim > article:not(.hovered) {
+      filter: blur(4px) brightness(1.06) saturate(0);
+      transform: scale(0.98);
+      box-shadow: none !important;
+      background: rgba(255,255,255,.62) !important;
+      transition: all .28s ease;
+    }
+
+    #cardsGrid.dim > article:not(.hovered) .media > img,
+    #cardsGrid.dim > article:not(.hovered) .media > video {
+      filter: grayscale(100%) saturate(0) brightness(0.9);
+    }
+
+    /* Hover effect for the card */
+    .glass:hover {
+      transform: scale(1.05); /* Zoom effect on hover */
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3); /* Larger shadow on hover */
     }
     .media > img, .media > video { filter: none; transition: filter .25s; }
   </style>
@@ -23,7 +43,7 @@
   <header class="sticky top-0 z-50 bg-neutral-50/70 backdrop-blur border-b">
     <div class="max-w-6xl mx-auto px-6 flex justify-between h-16 items-center">
       <a href="#" class="flex items-center gap-2 font-semibold">
-        <img src="https://i.ibb.co.com/vvT8zLWQ/im-curious-would-astrageldon-or-goozma-win-v0-5nqjpk8wb6uc1.gif" alt="logo" class="h-8 w-8 object-contain" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+        <img src="https://i.imgur.com/V5sqtQw.gif" alt="logo" class="h-8 w-8 object-contain" loading="lazy" decoding="async" referrerpolicy="no-referrer">
         <span>sandbox.atmax.id</span>
       </a>
     </div>
@@ -32,9 +52,9 @@
   <section id="bawah" class="py-10 md:py-16">
     <div class="max-w-6xl mx-auto px-6">
       <!-- Grid untuk dua kartu -->
-      <div class="grid md:grid-cols-2 gap-8">
+      <div id="cardsGrid" class="grid md:grid-cols-2 gap-8">
         <!-- Kartu pertama -->
-        <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
+        <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition hover:scale-105 hover:shadow-xl">
           <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#efefef"></div>
           <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden">
             <!-- Media Gambar (Opsional) -->
@@ -60,7 +80,7 @@
         </article>
 
         <!-- Kartu kedua -->
-        <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
+        <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition hover:scale-105 hover:shadow-xl">
           <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#c6ff57"></div>
           <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden">
             <!-- Media Gambar (Opsional) -->
