@@ -9,6 +9,8 @@
   <script src="https://cdn.jsdelivr.net/npm/heroicons@1.0.6/outline/index.js"></script>
   <style>
     html, body { scroll-behavior: smooth; }
+
+    /* Kartu dengan efek kaca */
     .glass {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.18);
@@ -17,25 +19,27 @@
       box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.25);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    /* Hover effect to blur the rest of the cards */
+
+    /* Efek hover - zoom in dan bayangan lebih besar */
+    .glass:hover {
+      transform: scale(1.05); /* Zoom effect */
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3); /* Larger shadow */
+    }
+
+    /* Efek blur dan transformasi pada kartu yang tidak di-hover */
     #cardsGrid.dim > article:not(.hovered) {
-      filter: blur(4px) brightness(1.06) saturate(0);
-      transform: scale(0.98);
+      filter: blur(4px) brightness(1.06) saturate(0); /* Efek blur */
+      transform: scale(0.98); /* Mengurangi ukuran kartu */
       box-shadow: none !important;
-      background: rgba(255,255,255,.62) !important;
-      transition: all .28s ease;
+      background: rgba(255, 255, 255, 0.62) !important;
+      transition: all 0.28s ease;
     }
 
     #cardsGrid.dim > article:not(.hovered) .media > img,
     #cardsGrid.dim > article:not(.hovered) .media > video {
-      filter: grayscale(100%) saturate(0) brightness(0.9);
+      filter: grayscale(100%) saturate(0) brightness(0.9); /* Mengubah gambar/video menjadi abu-abu */
     }
 
-    /* Hover effect for the card */
-    .glass:hover {
-      transform: scale(1.05); /* Zoom effect on hover */
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3); /* Larger shadow on hover */
-    }
     .media > img, .media > video { filter: none; transition: filter .25s; }
   </style>
 </head>
@@ -43,7 +47,7 @@
   <header class="sticky top-0 z-50 bg-neutral-50/70 backdrop-blur border-b">
     <div class="max-w-6xl mx-auto px-6 flex justify-between h-16 items-center">
       <a href="#" class="flex items-center gap-2 font-semibold">
-        <img src="https://i.imgur.com/V5sqtQw.gif" alt="logo" class="h-8 w-8 object-contain" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+        <img src="https://i.ibb.co.com/vvT8zLWQ/im-curious-would-astrageldon-or-goozma-win-v0-5nqjpk8wb6uc1.gif" alt="logo" class="h-8 w-8 object-contain" loading="lazy" decoding="async" referrerpolicy="no-referrer">
         <span>sandbox.atmax.id</span>
       </a>
     </div>
