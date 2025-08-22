@@ -31,59 +31,60 @@
 
   <section id="bawah" class="py-10 md:py-16">
     <div class="max-w-6xl mx-auto px-6">
-      <!-- Kartu pertama -->
-      <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition mb-8">
-        <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#efefef"></div>
-        <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden">
-          <!-- Media Gambar (Opsional) -->
-          <img src="https://via.placeholder.com/500x300" alt="Event Image" class="w-full h-full object-cover opacity-90">
-        </div>
-        <div class="relative z-10">
-          <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
-            <span class="icon w-5 h-5 grid place-items-center text-slate-700">
-              <!-- Ikon Tiket (Heroicon) -->
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-                <path d="M3 8a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a2 2 0 1 0 0 4v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a2 2 0 1 0 0-4V8zM9 8v8m6-8v8"/>
-              </svg>
+      <!-- Grid untuk dua kartu -->
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Kartu pertama -->
+        <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
+          <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#efefef"></div>
+          <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden">
+            <!-- Media Gambar (Opsional) -->
+            <img src="https://via.placeholder.com/500x300" alt="Event Image" class="w-full h-full object-cover opacity-90">
+          </div>
+          <div class="relative z-10">
+            <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
+              <span class="icon w-5 h-5 grid place-items-center text-slate-700">
+                <!-- Ikon Tiket (Heroicon) -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                  <path d="M3 8a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a2 2 0 1 0 0 4v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a2 2 0 1 0 0-4V8zM9 8v8m6-8v8"/>
+                </svg>
+              </span>
+              <span class="badge">Ticket</span>
             </span>
-            <span class="badge">Ticket</span>
-          </span>
-          <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight">Book Your Seat Now</h3>
-          <p class="mt-4 text-slate-800/90">Wawasan baru dari keynote & workshop.</p>
-          <a href="#" class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white">
-            <span class="font-semibold">Book A Seat</span>
-            <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
-          </a>
-        </div>
-      </article>
+            <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight">Book Your Seat Now</h3>
+            <p class="mt-4 text-slate-800/90">Wawasan baru dari keynote & workshop.</p>
+            <a href="#" class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white">
+              <span class="font-semibold">Book A Seat</span>
+              <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
+            </a>
+          </div>
+        </article>
 
-      <!-- Kartu kedua -->
-      <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition mb-8">
-        <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#c6ff57"></div>
-        <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden">
-          <!-- Media Gambar (Opsional) -->
-          <img src="https://via.placeholder.com/500x300" alt="Event Image" class="w-full h-full object-cover opacity-90">
-        </div>
-        <div class="relative z-10">
-          <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
-            <span class="icon w-5 h-5 grid place-items-center text-slate-700">
-              <!-- Ikon Handshake (Heroicon) -->
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-                <path d="M7.5 8.5 10 11l4-3 2.5 2.5-6.5 5a2 2 0 0 1-2.8-.2L4 12l3.5-3.5zM20 7l-2-2-4 3 2 2 4-3z"/>
-              </svg>
+        <!-- Kartu kedua -->
+        <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
+          <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#c6ff57"></div>
+          <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden">
+            <!-- Media Gambar (Opsional) -->
+            <img src="https://via.placeholder.com/500x300" alt="Event Image" class="w-full h-full object-cover opacity-90">
+          </div>
+          <div class="relative z-10">
+            <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
+              <span class="icon w-5 h-5 grid place-items-center text-slate-700">
+                <!-- Ikon Handshake (Heroicon) -->
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                  <path d="M7.5 8.5 10 11l4-3 2.5 2.5-6.5 5a2 2 0 0 1-2.8-.2L4 12l3.5-3.5zM20 7l-2-2-4 3 2 2 4-3z"/>
+                </svg>
+              </span>
+              <span class="badge">Sponsor</span>
             </span>
-            <span class="badge">Sponsor</span>
-          </span>
-          <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight">Unlock Sponsorship Benefits</h3>
-          <p class="mt-4 text-slate-800/90">Eksposur brand & akses komunitas.</p>
-          <a href="#" class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white">
-            <span class="font-semibold">Become Sponsor</span>
-            <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
-          </a>
-        </div>
-      </article>
-
-      <!-- Tambah Kartu Manual di Sini -->
+            <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight">Unlock Sponsorship Benefits</h3>
+            <p class="mt-4 text-slate-800/90">Eksposur brand & akses komunitas.</p>
+            <a href="#" class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white">
+              <span class="font-semibold">Become Sponsor</span>
+              <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
+            </a>
+          </div>
+        </article>
+      </div>
     </div>
   </section>
 
