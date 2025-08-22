@@ -3,34 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
-</svg>
- sandbox.atmax.id</title>
+  <title>Sandboxx - Event Cards</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Heroicons CDN -->
-<script src="https://cdn.jsdelivr.net/npm/heroicons@1.0.6/outline/index.js"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/heroicons@1.0.6/outline/index.js"></script>
   <style>
-    html, body { scroll-behavior:smooth; }
-    .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
-    .reveal.in{opacity:1;transform:none}
-
-    .glass{
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.18);
+    html, body { scroll-behavior: smooth; }
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
       backdrop-filter: blur(14px) saturate(1.2);
       -webkit-backdrop-filter: blur(14px) saturate(1.2);
-      box-shadow: 0 10px 30px -10px rgba(0,0,0,.25);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.25);
     }
-
-    .media > img, .media > video{ filter: none; transition: filter .25s; }
-
-    .frost::before{
-      content: ""; position: absolute; inset: 0; pointer-events: none;
-      background: radial-gradient(1200px 600px at 20% -10%, rgba(255,255,255,.22), transparent 40%),
-                  radial-gradient(900px 700px at 120% 120%, rgba(255,255,255,.18), transparent 45%);
-    }
+    .media > img, .media > video { filter: none; transition: filter .25s; }
   </style>
 </head>
 <body class="bg-neutral-50 text-slate-900 font-inter antialiased">
@@ -45,7 +31,59 @@
 
   <section id="bawah" class="py-10 md:py-16">
     <div class="max-w-6xl mx-auto px-6">
-      <div id="cardsGrid" class="grid md:grid-cols-2 gap-8 min-h-[200px]"></div>
+      <!-- Kartu pertama -->
+      <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition mb-8">
+        <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#efefef"></div>
+        <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden">
+          <!-- Media Gambar (Opsional) -->
+          <img src="https://via.placeholder.com/500x300" alt="Event Image" class="w-full h-full object-cover opacity-90">
+        </div>
+        <div class="relative z-10">
+          <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
+            <span class="icon w-5 h-5 grid place-items-center text-slate-700">
+              <!-- Ikon Tiket (Heroicon) -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                <path d="M3 8a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a2 2 0 1 0 0 4v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a2 2 0 1 0 0-4V8zM9 8v8m6-8v8"/>
+              </svg>
+            </span>
+            <span class="badge">Ticket</span>
+          </span>
+          <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight">Book Your Seat Now</h3>
+          <p class="mt-4 text-slate-800/90">Wawasan baru dari keynote & workshop.</p>
+          <a href="#" class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white">
+            <span class="font-semibold">Book A Seat</span>
+            <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
+          </a>
+        </div>
+      </article>
+
+      <!-- Kartu kedua -->
+      <article class="glass rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition mb-8">
+        <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#c6ff57"></div>
+        <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden">
+          <!-- Media Gambar (Opsional) -->
+          <img src="https://via.placeholder.com/500x300" alt="Event Image" class="w-full h-full object-cover opacity-90">
+        </div>
+        <div class="relative z-10">
+          <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
+            <span class="icon w-5 h-5 grid place-items-center text-slate-700">
+              <!-- Ikon Handshake (Heroicon) -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                <path d="M7.5 8.5 10 11l4-3 2.5 2.5-6.5 5a2 2 0 0 1-2.8-.2L4 12l3.5-3.5zM20 7l-2-2-4 3 2 2 4-3z"/>
+              </svg>
+            </span>
+            <span class="badge">Sponsor</span>
+          </span>
+          <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight">Unlock Sponsorship Benefits</h3>
+          <p class="mt-4 text-slate-800/90">Eksposur brand & akses komunitas.</p>
+          <a href="#" class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white">
+            <span class="font-semibold">Become Sponsor</span>
+            <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
+          </a>
+        </div>
+      </article>
+
+      <!-- Tambah Kartu Manual di Sini -->
     </div>
   </section>
 
@@ -55,113 +93,5 @@
       <div class="flex gap-3"><a href="#">Kebijakan Privasi</a><a href="#">Kontak</a></div>
     </div>
   </footer>
-
-  <template id="cardTpl">
-    <article class="reveal glass frost rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
-      <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#efefef"></div>
-      <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden"></div>
-      <div class="relative z-10">
-        <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
-          <span class="icon w-5 h-5 grid place-items-center text-slate-700"></span>
-          <span class="badge">Kategori</span>
-        </span>
-        <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight title">Title</h3>
-        <p class="mt-4 text-slate-800/90 desc">Desc</p>
-        <a class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white" target="_self" rel="noopener">
-          <span class="font-semibold cta">CTA</span>
-          <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
-        </a>
-      </div>
-    </article>
-  </template>
-
-  <script>
-    const HERO = {
-      ticket: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a2 2 0 1 0 0 4v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a2 2 0 1 0 0-4V8zM9 8v8m6-8v8"/></svg>',
-      handshake: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 8.5 10 11l4-3 2.5 2.5-6.5 5a2 2 0 0 1-2.8-.2L4 12l3.5-3.5zM20 7l-2-2-4 3 2 2 4-3z"/></svg>',
-      calendar: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 2h2v2h6V2h2v2h2a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h2V2zm12 6H5v10h14V8z"/></svg>',
-      megaphone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4l9 3V7L3 10zm15-3v10a4 4 0 0 0 3 0V7a4 4 0 0 0-3 0z"/></svg>'
-    };
-
-    const cards = [
-      {id: 'id-1', category: 'Ticket', icon: 'hero:ticket', title: 'Book Your Seat Now', desc: 'Wawasan baru dari keynote & workshop.', cta: 'Book A Seat', url: '#', bg: '#efb7ff', mediaType: 'none', mediaUrl: ''},
-      {id: 'id-2', category: 'Sponsor', icon: 'hero:handshake', title: 'Unlock Sponsorship Benefits', desc: 'Eksposur brand & akses komunitas.', cta: 'Become Sponsor', url: '#', bg: '#c6ff57', mediaType: 'none', mediaUrl: ''}
-    ];
-
-    function renderIcon(target, val) {
-      target.innerHTML = '';
-      if (!val) {
-        target.textContent = '•';
-        return;
-      }
-      if (val.startsWith('http')) {
-        const img = document.createElement('img');
-        img.src = val;
-        img.alt = 'icon';
-        img.className = 'w-5 h-5 object-contain';
-        target.appendChild(img);
-      } else if (val.includes('<svg')) {
-        target.innerHTML = val;
-      } else if (val.startsWith('hero:')) {
-        const key = val.replace('hero:', '');
-        target.innerHTML = HERO[key] || '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9" fill="currentColor"/></svg>';
-      } else {
-        target.textContent = val;
-      }
-    }
-
-    function buildMedia(host, type, url) {
-      host.innerHTML = '';
-      if (!url || type === 'none') return;
-      if (type === 'image') {
-        const img = document.createElement('img');
-        img.src = url;
-        img.alt = '';
-        img.className = 'w-full h-full object-cover opacity-90';
-        host.appendChild(img);
-      } else if (type === 'video') {
-        const vid = document.createElement('video');
-        vid.src = url;
-        vid.autoplay = true;
-        vid.loop = true;
-        vid.muted = true;
-        vid.playsInline = true;
-        vid.className = 'w-full h-full object-cover opacity-90';
-        host.appendChild(vid);
-      }
-    }
-
-    function render() {
-      const grid = document.getElementById('cardsGrid');
-      const tpl = document.getElementById('cardTpl');
-
-      if (!grid || !tpl) return;
-      grid.innerHTML = '';
-      cards.forEach(c => {
-        const node = tpl.content.cloneNode(true);
-        const art = node.querySelector('article');
-        const mediaHost = node.querySelector('.media');
-        const colorLayer = node.querySelector('.colorLayer');
-        if (colorLayer) colorLayer.style.background = c.bg || '#efefef';
-
-        buildMedia(mediaHost, c.mediaType, c.mediaUrl);
-
-        node.querySelector('.badge').textContent = c.category || '';
-        renderIcon(node.querySelector('.icon'), c.icon);
-        node.querySelector('.title').textContent = c.title || '';
-        node.querySelector('.desc').textContent = c.desc || '';
-
-        const btn = node.querySelector('.btn');
-        if (btn) {
-          btn.href = c.url || '#';
-          btn.target = '_self';
-        }
-
-        grid.appendChild(node);
-      });
-    }
-
-    render();
-  </script>
 </body>
 </html>
