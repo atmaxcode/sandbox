@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EventX — Glassmorphism Cards (Heroicons, Admin)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body { scroll-behavior:smooth; }
+    .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+    .reveal.in{opacity:1;transform:none}
+
+    /* Hover logic: kartu yang TIDAK di-hover → putih, tanpa shadow, blur & desaturate */
+    #cardsGrid.dim > article:not(.hovered){
+      filter: blur(4px) brightness(1.06) saturate(0);
+      transform: scale(.985);
+      box-shadow: none !important;
+      background: rgba(255,255,255,.62) !important;
+      transition: all .28s ease;
+    }
+    #cardsGrid.dim > article:not(.hovered) .media > img,
+    #cardsGrid.dim > article:not(.hovered) .media > video{ filter: grayscale(100%) saturate(0) brightness(.95); }
+
+    dialog[open]{animation:fadeIn .18s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+    /* Glassmorphism base */
+    .glass{
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(14px) saturate(1.2);
+      -webkit-backdrop-filter: blur(14px) saturate(1.2);
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,.25);
+    }
+
+    .media > img, .media > video{ filter: none; transition: filter .25s; }
+
+    /* Overlay tekstur, tapi tidak blok interaksi */
+    .frost::before{
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(255,255,255,.22), transparent 40%),
+                  radial-gradient(900px 700px at 120% 120%, rgba(255,255,255,.18), transparent 45%);
+    }
+  </style>
+</head>
+<body class="bg-neutral-50 text-slate-900 font-inter antialiased">
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-neutral-50/70 backdrop-blur border-b">
+    <div class="max-w-6xl mx-auto px-6 flex justify-between h-16 items-center">
+      <a href="#" class="flex items-center gap-2 font-semibold">
+        <img src="https://i.ibb.co.com/vvT8zLWQ/im-curious-would-astrageldon-or-goozma-win-v0-5nqjpk8wb6uc1.gif" alt="logo" class="h-8 w-8 object-contain" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+        <span>EventX</span>
+      </a>
+      <button id="btnOpenLogin" class="hidden md:inline-flex px-4 py-2 bg-black text-white rounded-full">Login</button>
+    </div>
+  </header>
+
+  <!-- Admin bar -->
+  <div id="adminBar" class="hidden sticky top-16 z-40 bg-indigo-600 text-white">
+    <div class="max-w-6xl mx-auto px-6 py-2 flex gap-3 text-sm items-center">
+      <span class="font-semibold">Mode Admin</span>
+      <button id="btnAddCard" class="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 transition">+ Tambah Kotak</button>
+      <button id="btnLogout" class="ms-auto px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 transition">Logout</button>
+    </div>
+  </div>
+
+  <!-- Cards -->
+  <section id="bawah" class="py-10 md:py-16">
+    <div class="max-w-6xl mx-auto px-6">
+      <div id="cardsGrid" class="grid md:grid-cols-2 gap-8 min-h-[200px]"></div>
+    </div>
+  </section>
+
+  <footer class="py-10 border-t">
+    <div class="max-w-6xl mx-auto px-6 flex justify-between text-sm">
+      <p>© 2025 EventX.</p>
+      <div class="flex gap-3"><a href="#">Kebijakan Privasi</a><a href="#">Kontak</a></div>
+    </div>
+  </footer>
+
+  <!-- LOGIN MODAL -->
+  <dialog id="loginModal" class="rounded-2xl w-full max-w-md backdrop:bg-black/40">
+    <form method="dialog" class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Login Admin</h3>
+        <button class="text-slate-500" value="close" aria-label="Tutup">✕</button>
+      </div>
+      <input id="email" type="email" placeholder="admin@eventx.com" class="w-full border p-2 mb-2 rounded" required>
+      <input id="password" type="password" placeholder="admin123" class="w-full border p-2 mb-4 rounded" required>
+      <div class="flex justify-end gap-2">
+        <button value="close" class="px-3 py-2 rounded border">Batal</button>
+        <button id="btnLogin" type="button" class="bg-black text-white px-4 py-2 rounded">Login</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- EDITOR MODAL -->
+  <dialog id="editorModal" class="rounded-2xl w-full max-w-2xl backdrop:bg-black/40">
+    <form id="editorForm" class="p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="editorTitle" class="text-lg font-semibold">Tambah Kotak</h3>
+        <button type="button" class="text-slate-500" onclick="editorModal.close()" aria-label="Tutup">✕</button>
+      </div>
+      <div class="grid md:grid-cols-2 gap-4">
+        <label class="text-sm">Kategori
+          <input id="fCategory" class="w-full border p-2 rounded mt-1" placeholder="Ticket / Sponsor / Update">
+        </label>
+        <label class="text-sm">Ikon (emoji/URL/SVG/Heroicon)
+          <input id="fIcon" class="w-full border p-2 rounded mt-1" placeholder="hero:ticket atau 🎟️ atau https://.../icon.svg">
+        </label>
+        <label class="text-sm">Warna Latar (#hex)
+          <input id="fBg" class="w-full border p-2 rounded mt-1" placeholder="#efb7ff">
+        </label>
+        <label class="text-sm">Tipe Media
+          <select id="fMediaType" class="w-full border p-2 rounded mt-1">
+            <option value="none">None</option>
+            <option value="image">Gambar</option>
+            <option value="video">Video</option>
+          </select>
+        </label>
+        <label class="text-sm md:col-span-2">URL Media (opsional)
+          <input id="fMediaUrl" class="w-full border p-2 rounded mt-1" placeholder="https://.../bg.webp atau bg.webm">
+        </label>
+        <label class="text-sm md:col-span-2">Judul
+          <input id="fTitle" class="w-full border p-2 rounded mt-1" placeholder="Book Your Seat Now">
+        </label>
+        <label class="text-sm md:col-span-2">Deskripsi
+          <textarea id="fDesc" rows="3" class="w-full border p-2 rounded mt-1" placeholder="Be inspired by…"></textarea>
+        </label>
+        <label class="text-sm">Label Tombol
+          <input id="fCta" class="w-full border p-2 rounded mt-1" placeholder="Book A Seat">
+        </label>
+        <label class="text-sm">URL Tombol
+          <input id="fUrl" class="w-full border p-2 rounded mt-1" placeholder="#">
+        </label>
+      </div>
+      <div class="flex justify-between mt-4">
+        <button type="button" id="btnDeleteCard" class="hidden text-red-600">Hapus</button>
+        <button type="submit" class="bg-black text-white px-4 py-2 rounded">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Template -->
+  <template id="cardTpl">
+    <article class="reveal glass frost rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
+      <!-- Layer warna (seperti awal) -->
+      <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#efefef"></div>
+      <div class="media absolute inset-0 -z-10 rounded-[28px] overflow-hidden"></div>
+      <div class="relative z-10">
+        <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
+          <span class="icon w-5 h-5 grid place-items-center text-slate-700"></span>
+          <span class="badge">Kategori</span>
+        </span>
+        <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight title">Title</h3>
+        <p class="mt-4 text-slate-800/90 desc">Desc</p>
+        <a class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white" target="_self" rel="noopener">
+          <span class="font-semibold cta">CTA</span>
+          <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
+        </a>
+        <button class="editBtn hidden absolute top-4 right-4 bg-black/70 text-white text-xs px-2 py-1 rounded">Edit</button>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    // ===== Storage-safe util (fallback jika localStorage tidak tersedia) =====
+    const LS_KEY = 'eventx_cards_glass_fix2';
+    const storage = (()=>{
+      try{
+        const t='__test__';
+        window.localStorage.setItem(t,'1');
+        window.localStorage.removeItem(t);
+        return {
+          get: k => window.localStorage.getItem(k),
+          set: (k,v) => window.localStorage.setItem(k,v),
+          del: k => window.localStorage.removeItem(k)
+        };
+      }catch(e){
+        const mem={};
+        return {
+          get: k => (k in mem ? mem[k] : null),
+          set: (k,v) => { mem[k]=v; },
+          del: k => { delete mem[k]; }
+        };
+      }
+    })();
+
+    // ===== ICONS (Heroicons subset, inline) =====
+    const HERO = {
+      ticket: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a2 2 0 1 0 0 4v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a2 2 0 1 0 0-4V8zM9 8v8m6-8v8"/></svg>',
+      handshake: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 8.5 10 11l4-3 2.5 2.5-6.5 5a2 2 0 0 1-2.8-.2L4 12l3.5-3.5zM20 7l-2-2-4 3 2 2 4-3z"/></svg>',
+      calendar: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 2h2v2h6V2h2v2h2a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h2V2zm12 6H5v10h14V8z"/></svg>',
+      megaphone: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 10v4l9 3V7L3 10zm15-3v10a4 4 0 0 0 3 0V7a4 4 0 0 0-3 0z"/></svg>'
+    };
+
+    const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'id-' + Math.random().toString(36).slice(2);
+
+    // default 2 kartu (warna seperti awal)
+    const initialCards=[
+      {id:uid(),category:'Ticket',icon:'hero:ticket',title:'Book Your Seat Now',desc:'Wawasan baru dari keynote & workshop.',cta:'Book A Seat',url:'#',bg:'#efb7ff',mediaType:'none',mediaUrl:''},
+      {id:uid(),category:'Sponsor',icon:'hero:handshake',title:'Unlock Sponsorship Benefits',desc:'Eksposur brand & akses komunitas.',cta:'Become Sponsor',url:'#',bg:'#c6ff57',mediaType:'none',mediaUrl:''}
+    ];
+
+    function safeLoad(){
+      try{
+        const raw=storage.get(LS_KEY);
+        if(!raw) return null;
+        const parsed=JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : null;
+      }catch(e){ storage.del(LS_KEY); return null; }
+    }
+
+    if(new URLSearchParams(location.search).get('reset')==='1'){ storage.del(LS_KEY); }
+
+    let cards = safeLoad();
+    if(!cards || !cards.length){ cards = initialCards; storage.set(LS_KEY, JSON.stringify(cards)); }
+    let admin = sessionStorage.getItem('eventx_admin')==='1';
+
+    const grid=document.getElementById('cardsGrid');
+    const tpl=document.getElementById('cardTpl');
+    const adminBar=document.getElementById('adminBar');
+    const loginModal=document.getElementById('loginModal');
+    const editorModal=document.getElementById('editorModal');
+
+    function renderIcon(target, val){
+      target.innerHTML='';
+      if(!val){ target.textContent='•'; return; }
+      if(val.startsWith('http')){
+        const img=document.createElement('img'); img.src=val; img.alt='icon'; img.className='w-5 h-5 object-contain'; target.appendChild(img);
+      } else if(val.includes('<svg')){ target.innerHTML=val; }
+      else if(val.startsWith('hero:')){ const key=val.replace('hero:',''); target.innerHTML = HERO[key] || '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9" fill="currentColor"/></svg>'; }
+      else { target.textContent=val; }
+    }
+
+    function buildMedia(host, type, url){
+      host.innerHTML = '';
+      if(!url || type==='none') return;
+      if(type==='image'){
+        const img = document.createElement('img');
+        img.src = url; img.alt = '';
+        img.className = 'w-full h-full object-cover opacity-90';
+        host.appendChild(img);
+      } else if(type==='video'){
+        const vid = document.createElement('video');
+        vid.src = url; vid.autoplay = true; vid.loop = true; vid.muted = true; vid.playsInline = true;
+        vid.className = 'w-full h-full object-cover opacity-90';
+        host.appendChild(vid);
+      }
+    }
+
+    function isExternal(href){
+      try{ const u = new URL(href, location.href); return u.origin !== location.origin; }catch{ return false; }
+    }
+
+    function revealInit(){
+      const els = document.querySelectorAll('.reveal');
+      if(!('IntersectionObserver' in window)){
+        els.forEach(el=>el.classList.add('in')); return;
+      }
+      const io = new IntersectionObserver((entries)=>{
+        for(const e of entries){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } }
+      },{ threshold: .14 });
+      els.forEach(el=> io.observe(el));
+    }
+
+    function render(){
+      if(!grid || !tpl){ return; }
+      grid.innerHTML='';
+      (cards||[]).forEach(c=>{
+        const node = tpl.content.cloneNode(true);
+        const art = node.querySelector('article');
+        const mediaHost = node.querySelector('.media');
+        const colorLayer = node.querySelector('.colorLayer');
+        if(colorLayer) colorLayer.style.background = c.bg || '#efefef';
+
+        // media
+        buildMedia(mediaHost, c.mediaType, c.mediaUrl);
+
+        // content
+        node.querySelector('.badge').textContent=c.category||'';
+        renderIcon(node.querySelector('.icon'), c.icon);
+        node.querySelector('.title').textContent=c.title||'';
+        node.querySelector('.desc').textContent=c.desc||'';
+
+        const btn=node.querySelector('.btn');
+        if(btn){
+          btn.href=c.url||'#';
+          btn.target = isExternal(c.url) ? '_blank' : '_self';
+          btn.rel = isExternal(c.url) ? 'noopener noreferrer' : 'noopener';
+          btn.addEventListener('click', e=>{
+            grid.classList.remove('dim');
+          });
+        }
+
+        const cta=node.querySelector('.cta'); if(cta){ cta.textContent=c.cta||'Learn more'; }
+
+        // hover dim effect
+        art.addEventListener('mouseenter',()=>{ grid.classList.add('dim'); art.classList.add('hovered'); });
+        art.addEventListener('mouseleave',()=>{ grid.classList.remove('dim'); art.classList.remove('hovered'); });
+
+        // admin edit button
+        const editBtn = node.querySelector('.editBtn');
+        if(admin){
+          editBtn.classList.remove('hidden');
+          editBtn.addEventListener('click', (ev)=>{ ev.stopPropagation(); openEditor(c.id); });
+          art.style.cursor='pointer';
+          art.addEventListener('click', ()=> openEditor(c.id));
+        }
+
+        grid.appendChild(node);
+      });
+
+      revealInit();
+      if(adminBar) adminBar.classList.toggle('hidden', !admin);
+    }
+
+    // Login
+    const btnOpenLogin=document.getElementById('btnOpenLogin');
+    if(btnOpenLogin) btnOpenLogin.addEventListener('click',()=> loginModal?.showModal());
+    const btnLogin=document.getElementById('btnLogin');
+    if(btnLogin) btnLogin.addEventListener('click',()=>{
+      const email = document.getElementById('email').value.trim();
+      const pass  = document.getElementById('password').value;
+      if(email==='admin@eventx.com' && pass==='admin123'){
+        admin = true; sessionStorage.setItem('eventx_admin','1'); loginModal?.close(); render();
+      } else { alert('Email atau password salah (demo: admin@eventx.com / admin123)'); }
+    });
+    const btnLogout=document.getElementById('btnLogout');
+    if(btnLogout) btnLogout.addEventListener('click',()=>{ admin=false; sessionStorage.removeItem('eventx_admin'); render(); });
+
+    // Editor
+    const editorForm=document.getElementById('editorForm');
+    const btnAddCard=document.getElementById('btnAddCard');
+    const btnDeleteCard=document.getElementById('btnDeleteCard');
+    let editingId=null;
+
+    if(btnAddCard) btnAddCard.addEventListener('click',()=> openEditor());
+
+    function openEditor(id){
+      editingId = id || null;
+      const c = cards.find(x=>x.id===id) || {category:'',icon:'hero:megaphone',bg:'#efb7ff',mediaType:'none',mediaUrl:'',title:'',desc:'',cta:'',url:'#'};
+      document.getElementById('fCategory').value=c.category||'';
+      document.getElementById('fIcon').value=c.icon||'';
+      document.getElementById('fBg').value=c.bg||'#efb7ff';
+      document.getElementById('fMediaType').value=c.mediaType||'none';
+      document.getElementById('fMediaUrl').value=c.mediaUrl||'';
+      document.getElementById('fTitle').value=c.title||'';
+      document.getElementById('fDesc').value=c.desc||'';
+      document.getElementById('fCta').value=c.cta||'';
+      document.getElementById('fUrl').value=c.url||'#';
+      document.getElementById('editorTitle').textContent = id ? 'Edit Kotak' : 'Tambah Kotak';
+      if(btnDeleteCard) btnDeleteCard.classList.toggle('hidden', !id);
+      editorModal?.showModal();
+    }
+
+    if(btnDeleteCard) btnDeleteCard.addEventListener('click',()=>{
+      if(!editingId) return;
+      cards = cards.filter(x=>x.id!==editingId);
+      storage.set(LS_KEY, JSON.stringify(cards));
+      editorModal?.close(); render();
+    });
+
+    if(editorForm) editorForm.addEventListener('submit',(e)=>{
+      e.preventDefault();
+      const payload = {
+        id: editingId || (window.crypto?.randomUUID?.() || 'id-'+Math.random().toString(36).slice(2)),
+        category: document.getElementById('fCategory').value,
+        icon: document.getElementById('fIcon').value,
+        bg: document.getElementById('fBg').value || '#efb7ff',
+        mediaType: document.getElementById('fMediaType').value,
+        mediaUrl: document.getElementById('fMediaUrl').value,
+        title: document.getElementById('fTitle').value,
+        desc: document.getElementById('fDesc').value,
+        cta: document.getElementById('fCta').value || 'Learn more',
+        url: document.getElementById('fUrl').value || '#'
+      };
+      const idx = cards.findIndex(x=>x.id===editingId);
+      if(idx>=0) cards[idx]=payload; else cards.push(payload);
+      storage.set(LS_KEY, JSON.stringify(cards));
+      editorModal?.close(); render();
+    });
+
+    // Init (langsung, plus saat DOM ready)
+    try{ render(); }catch(e){ console.error(e); }
+    document.addEventListener('DOMContentLoaded', render);
+
+    // ===== Tampilan fallback kalau JS error sebelum render =====
+    if(!document.getElementById('cardsGrid').children.length){
+      const fallback = document.createElement('div');
+      fallback.className='text-sm text-red-600';
+      fallback.textContent='Memuat kartu… (jika tetap kosong, tambahkan ?reset=1 pada URL)';
+      document.getElementById('cardsGrid').appendChild(fallback);
+    }
+  </script>
+</body>
+</html>
