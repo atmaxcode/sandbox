@@ -26,26 +26,27 @@
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3); /* Larger shadow */
     }
 
-    /* Efek blur dan transformasi pada kartu yang tidak di-hover */
+    /* Efek blur pada kartu yang tidak di-hover */
     #cardsGrid > article {
       transition: filter 0.28s ease, transform 0.28s ease;
     }
 
-    /* Defaultnya kartu jelas (tidak blur) */
+    /* Default kartu jelas tanpa blur */
     #cardsGrid > article {
       filter: none;
       transform: scale(1);
     }
 
-    /* Efek blur pada kartu yang tidak di-hover */
-    #cardsGrid > article:not(.hovered) {
+    /* Kartu yang tidak di-hover akan blur */
+    #cardsGrid > article.dim {
       filter: blur(4px) brightness(1.06) saturate(0); /* Efek blur */
       transform: scale(0.98); /* Mengurangi ukuran kartu */
+      box-shadow: none !important;
       background: rgba(255, 255, 255, 0.62) !important;
     }
 
-    #cardsGrid > article:not(.hovered) .media > img,
-    #cardsGrid > article:not(.hovered) .media > video {
+    #cardsGrid > article.dim .media > img,
+    #cardsGrid > article.dim .media > video {
       filter: grayscale(100%) saturate(0) brightness(0.9); /* Mengubah gambar/video menjadi abu-abu */
     }
 
@@ -134,12 +135,13 @@
     
     cards.forEach(card => {
       card.addEventListener('mouseenter', () => {
+        // Menambahkan efek blur pada kartu lainnya
         document.querySelectorAll('#cardsGrid article').forEach(el => el.classList.add('dim'));
-        card.classList.add('hovered');
+        card.classList.remove('dim');  // Menghapus blur dari kartu yang di-hover
       });
       card.addEventListener('mouseleave', () => {
+        // Menghapus efek blur dari semua kartu saat hover hilang
         document.querySelectorAll('#cardsGrid article').forEach(el => el.classList.remove('dim'));
-        card.classList.remove('hovered');
       });
     });
   </script>
