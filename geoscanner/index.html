@@ -304,26 +304,49 @@
             overlay.style.display = 'flex';
             
             try {
-                // Meminta kamera belakang (environment) dengan aspek rasio ideal 9:16
+                // Mendapatkan daftar semua perangkat media
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                // Cari kamera belakang yang kemungkinan besar adalah kamera utama (menghindari wide/macro)
+                let selectedDeviceId = null;
+                
+                // Prioritas 1: Mencari label 'back' tapi bukan 'wide' atau 'macro'
+                const mainBackCamera = videoDevices.find(device => {
+                    const label = device.label.toLowerCase();
+                    return label.includes('back') && !label.includes('wide') && !label.includes('macro') && !label.includes('micro');
+                });
+
+                if (mainBackCamera) {
+                    selectedDeviceId = mainBackCamera.deviceId;
+                } else {
+                    // Prioritas 2: Kamera belakang apa saja yang tersedia
+                    const anyBackCamera = videoDevices.find(device => device.label.toLowerCase().includes('back'));
+                    if (anyBackCamera) selectedDeviceId = anyBackCamera.deviceId;
+                }
+
                 const constraints = { 
                     video: { 
-                        facingMode: { exact: "environment" },
+                        deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
+                        facingMode: selectedDeviceId ? undefined : "environment",
                         aspectRatio: 9/16 
                     } 
                 };
                 
-                // Fallback jika 'exact' tidak didukung atau kamera belakang tidak ditemukan
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia(constraints);
-                } catch(e) {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                }
-
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 video.play();
             } catch (e) { 
-                showMessage('Gagal', 'Kamera tidak dapat diakses atau perangkat tidak memiliki kamera belakang.'); 
-                stopCamera(); 
+                console.error("Camera access error:", e);
+                // Fallback terakhir: coba kamera belakang standar tanpa filter ID
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    video.srcObject = stream;
+                    video.play();
+                } catch (err) {
+                    showMessage('Gagal', 'Kamera tidak dapat diakses atau perangkat tidak memiliki kamera belakang.'); 
+                    stopCamera(); 
+                }
             }
         };
 
