@@ -17,6 +17,8 @@
             background-attachment: fixed;
             color: #f8fafc;
             min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
         }
 
         .glass-effect {
@@ -37,10 +39,6 @@
             box-shadow: 0 10px 20px -10px rgba(146, 227, 80, 0.5);
         }
 
-        .btn-gradient-green:active {
-            transform: translateY(0);
-        }
-
         #map {
             height: 350px;
             width: 100%;
@@ -48,9 +46,65 @@
             z-index: 10;
         }
 
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #1b1a2c; }
-        ::-webkit-scrollbar-thumb { background: rgba(146, 227, 80, 0.2); border-radius: 10px; }
+        /* Fullscreen Camera Overlay 9:16 */
+        #camera-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #camera-feed-fullscreen {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Membuat video menutupi layar 9:16 */
+        }
+
+        .camera-ui-controls {
+            position: absolute;
+            bottom: 40px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            pointer-events: none;
+        }
+
+        .capture-btn {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            pointer-events: auto;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .capture-btn:active {
+            transform: scale(0.9);
+            background: #eee;
+        }
+
+        .cancel-camera-btn {
+            background: rgba(0,0,0,0.5);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 99px;
+            font-weight: bold;
+            pointer-events: auto;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
 
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn {
@@ -58,32 +112,28 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        video#camera-feed {
-            border-radius: 24px;
-            overflow: hidden;
-            background-color: #000;
-        }
-
         .result-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 24px;
             padding: 1.5rem;
-            transition: all 0.3s ease;
-        }
-        .result-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(146, 227, 80, 0.3);
         }
 
-        /* Custom Leaflet Dark Mode */
         .leaflet-tile { filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7); }
-        .leaflet-container { background: #1b1a2c; }
     </style>
 </head>
 <body class="antialiased">
 
-    <div class="max-w-4xl mx-auto px-6 py-8">
+    <!-- CAMERA OVERLAY (9:16 FULLSCREEN) -->
+    <div id="camera-overlay">
+        <video id="camera-feed-fullscreen" autoplay playsinline></video>
+        <div class="camera-ui-controls">
+            <button onclick="capturePhoto()" class="capture-btn" title="Ambil Foto"></button>
+            <button onclick="stopCamera()" class="cancel-camera-btn">Batal</button>
+        </div>
+    </div>
+
+    <div id="main-content" class="max-w-4xl mx-auto px-6 py-8">
         
         <!-- HEADER -->
         <header class="flex justify-between items-center mb-16 py-4">
@@ -109,18 +159,9 @@
         <!-- MAIN CONTENT -->
         <main class="space-y-12">
             
-            <div id="visual-container" class="relative group">
-                <!-- Camera Feed -->
-                <div id="camera-section" class="hidden overflow-hidden rounded-[32px] glass-effect p-2">
-                    <video id="camera-feed" class="w-full bg-black aspect-video" autoplay playsinline></video>
-                    <div class="flex justify-center gap-4 mt-4 p-4">
-                        <button id="capture-button" onclick="capturePhoto()" class="px-8 py-3 btn-gradient-green rounded-full font-bold text-white shadow-lg">Ambil Foto</button>
-                        <button onclick="stopCamera(true)" class="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-full font-bold text-white backdrop-blur-md">Batal</button>
-                    </div>
-                </div>
-
-                <!-- Image Preview -->
-                <div id="image-preview-container" class="hidden flex justify-center">
+            <div id="visual-container">
+                <!-- Image Preview Area -->
+                <div id="image-preview-container" class="hidden flex justify-center fade-in">
                     <div class="relative">
                         <img id="image-preview" class="max-h-[400px] rounded-[32px] shadow-2xl border border-white/10" alt="Preview">
                         <button onclick="resetImage()" class="absolute -top-3 -right-3 w-10 h-10 bg-red-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-red-600 transition-all">✕</button>
@@ -135,7 +176,7 @@
                         <svg class="w-8 h-8 text-[#92e350]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.218A2 2 0 0110.457 4h3.085a2 2 0 011.664.89l.812 1.218A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     </div>
                     <span class="font-bold text-white">Kamera Langsung</span>
-                    <span class="text-xs text-gray-400 mt-1">Gunakan kamera perangkat</span>
+                    <span class="text-xs text-gray-400 mt-1">Layar penuh 9:16</span>
                 </button>
 
                 <label class="group flex flex-col items-center justify-center p-8 rounded-[32px] glass-effect hover:bg-white/10 transition-all border border-white/5 cursor-pointer">
@@ -169,17 +210,13 @@
     <!-- Modals -->
     <div id="api-input-modal" class="fixed inset-0 bg-[#0f172a]/95 backdrop-blur-xl flex items-center justify-center p-6 z-50 hidden">
         <div class="max-w-md w-full">
-            <h3 class="text-3xl font-extrabold text-white mb-2">Akses Gemini AI</h3>
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-3xl font-extrabold text-white">Akses Gemini AI</h3>
+                <button onclick="clearApiKey()" class="text-xs bg-red-500/10 text-red-500 px-3 py-1 rounded-full border border-red-500/20 hover:bg-red-500 hover:text-white transition-all">Hapus Key</button>
+            </div>
             <p class="text-gray-400 mb-8 text-sm">Masukkan API Key untuk memulai analisis.</p>
             
-            <div class="relative flex items-center mb-6">
-                <input type="password" id="api-key-input-modal" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pr-16 text-white focus:outline-none focus:ring-2 focus:ring-[#92e350]" placeholder="AIzaSy...">
-                <button onclick="clearApiKey()" class="absolute right-4 p-2 text-gray-400 hover:text-red-500 transition-colors group" title="Hapus API Key">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
-            </div>
+            <input type="password" id="api-key-input-modal" class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white mb-6 focus:outline-none focus:ring-2 focus:ring-[#92e350]" placeholder="AIzaSy...">
 
             <div class="flex gap-4">
                 <button onclick="saveApiKey(); closeApiInputModal();" class="flex-1 btn-gradient-green py-4 rounded-full font-bold text-white">Simpan Akses</button>
@@ -208,7 +245,6 @@
         </div>
     </div>
 
-    <!-- Leaflet JS untuk Peta -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const API_KEY_STORAGE_KEY = 'geminiApiKey';
@@ -219,24 +255,16 @@
         let stream = null;
         let mapInstance = null;
 
-        const apiStatusDot = document.getElementById('api-status-dot');
-        const analyzeButton = document.getElementById('analyze-button');
-        const imagePreviewContainer = document.getElementById('image-preview-container');
-        const imagePreview = document.getElementById('image-preview');
-        const resultsSection = document.getElementById('results-section');
-        const resultContent = document.getElementById('result-content');
-        const loadingSpinner = document.getElementById('loading-spinner');
-        const buttonText = document.getElementById('button-text');
-
         function loadApiKey() {
             const key = localStorage.getItem(API_KEY_STORAGE_KEY);
+            const dot = document.getElementById('api-status-dot');
             if (key) {
                 currentApiKey = key;
-                apiStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-[#92e350] shadow-[0_0_8px_rgba(146,227,80,0.6)]';
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-[#92e350] shadow-[0_0_8px_rgba(146,227,80,0.6)]';
                 document.getElementById('api-key-input-modal').value = key;
             } else {
                 currentApiKey = null;
-                apiStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]';
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]';
                 document.getElementById('api-key-input-modal').value = '';
             }
         }
@@ -269,33 +297,65 @@
 
         window.openCamera = async function() {
             if(!currentApiKey) return showMessage('Akses Ditolak', 'Harap masukkan API Key terlebih dahulu.');
-            document.getElementById('camera-section').classList.remove('hidden');
-            document.getElementById('input-controls').classList.add('hidden');
+            
+            const overlay = document.getElementById('camera-overlay');
+            const video = document.getElementById('camera-feed-fullscreen');
+            
+            overlay.style.display = 'flex';
+            
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                const video = document.getElementById('camera-feed');
+                // Meminta kamera belakang (environment) dengan aspek rasio ideal 9:16
+                const constraints = { 
+                    video: { 
+                        facingMode: { exact: "environment" },
+                        aspectRatio: 9/16 
+                    } 
+                };
+                
+                // Fallback jika 'exact' tidak didukung atau kamera belakang tidak ditemukan
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                } catch(e) {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                }
+
                 video.srcObject = stream;
                 video.play();
-            } catch (e) { showMessage('Gagal', 'Kamera tidak dapat diakses.'); stopCamera(true); }
+            } catch (e) { 
+                showMessage('Gagal', 'Kamera tidak dapat diakses atau perangkat tidak memiliki kamera belakang.'); 
+                stopCamera(); 
+            }
         };
 
-        window.stopCamera = (resetUI = false) => {
-            if(stream) stream.getTracks().forEach(t => t.stop());
-            document.getElementById('camera-section').classList.add('hidden');
-            if(resetUI) document.getElementById('input-controls').classList.remove('hidden');
+        window.stopCamera = () => {
+            if(stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+            document.getElementById('camera-overlay').style.display = 'none';
         };
 
         window.capturePhoto = () => {
-            const video = document.getElementById('camera-feed');
+            const video = document.getElementById('camera-feed-fullscreen');
             const canvas = document.createElement('canvas');
+            
+            // Mengambil dimensi asli video agar resolusi tetap bagus
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            const data = canvas.toDataURL('image/jpeg');
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const data = canvas.toDataURL('image/jpeg', 0.85);
             base64Image = data.split(',')[1];
-            imagePreview.src = data;
-            imagePreviewContainer.classList.remove('hidden');
-            analyzeButton.disabled = false;
+            
+            const preview = document.getElementById('image-preview');
+            preview.src = data;
+            
+            document.getElementById('image-preview-container').classList.remove('hidden');
+            document.getElementById('input-controls').classList.add('hidden');
+            document.getElementById('analyze-button').disabled = false;
+            
             stopCamera();
         };
 
@@ -305,29 +365,34 @@
             const reader = new FileReader();
             reader.onload = (ev) => {
                 base64Image = ev.target.result.split(',')[1];
-                imagePreview.src = ev.target.result;
-                imagePreviewContainer.classList.remove('hidden');
+                document.getElementById('image-preview').src = ev.target.result;
+                document.getElementById('image-preview-container').classList.remove('hidden');
                 document.getElementById('input-controls').classList.add('hidden');
-                analyzeButton.disabled = false;
+                document.getElementById('analyze-button').disabled = false;
             };
             reader.readAsDataURL(file);
         };
 
         window.resetImage = () => {
             base64Image = null;
-            imagePreviewContainer.classList.add('hidden');
+            document.getElementById('image-preview-container').classList.add('hidden');
             document.getElementById('input-controls').classList.remove('hidden');
-            analyzeButton.disabled = true;
-            resultsSection.classList.add('hidden');
+            document.getElementById('analyze-button').disabled = true;
+            document.getElementById('results-section').classList.add('hidden');
         };
 
         async function analyzeImage() {
             if(!currentApiKey || !base64Image) return;
-            loadingSpinner.classList.remove('hidden');
-            buttonText.textContent = "Menganalisis...";
-            analyzeButton.disabled = true;
+            
+            const spinner = document.getElementById('loading-spinner');
+            const btnText = document.getElementById('button-text');
+            const btn = document.getElementById('analyze-button');
+            
+            spinner.classList.remove('hidden');
+            btnText.textContent = "Menganalisis...";
+            btn.disabled = true;
 
-            const prompt = "Analisis foto GeoGuessr ini. Berikan koordinat perkiraan (lat, lng) berdasarkan elemen visual. Berikan output dalam format JSON Bahasa Indonesia.";
+            const prompt = "Analisis foto GeoGuessr ini. Berikan koordinat perkiraan (lat, lng) berdasarkan elemen visual (tiang listrik, plat nomor, rambu, vegetasi). Berikan output dalam format JSON Bahasa Indonesia.";
             const schema = {
                 type: "OBJECT",
                 properties: {
@@ -345,8 +410,7 @@
                             lng: { type: "NUMBER" }
                         }
                     }
-                },
-                required: ["negara", "wilayah", "bahasa", "telepon", "merk_dagang", "petunjuk_visual", "meta_geoguessr", "koordinat"]
+                }
             };
 
             try {
@@ -359,39 +423,30 @@
                     })
                 });
                 
-                if (!response.ok) throw new Error();
-                
                 const data = await response.json();
                 const res = JSON.parse(data.candidates[0].content.parts[0].text);
                 renderResults(res);
             } catch (e) {
-                showMessage('Gagal Analisis', 'Terjadi kesalahan saat memproses gambar.');
+                showMessage('Gagal', 'Terjadi kesalahan saat memproses gambar.');
             } finally {
-                loadingSpinner.classList.add('hidden');
-                buttonText.textContent = "Pindai & Deteksi Lokasi";
-                analyzeButton.disabled = false;
+                spinner.classList.add('hidden');
+                btnText.textContent = "Pindai & Deteksi Lokasi";
+                btn.disabled = false;
             }
         }
 
         function initMap(lat, lng, label) {
-            if (mapInstance) {
-                mapInstance.remove();
-            }
-            
+            if (mapInstance) mapInstance.remove();
             mapInstance = L.map('map').setView([lat, lng], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap'
-            }).addTo(mapInstance);
-
-            L.marker([lat, lng]).addTo(mapInstance)
-                .bindPopup(`<b>Perkiraan Lokasi:</b><br>${label}`)
-                .openPopup();
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+            L.marker([lat, lng]).addTo(mapInstance).bindPopup(label).openPopup();
         }
 
         function renderResults(data) {
+            const resultsSection = document.getElementById('results-section');
             resultsSection.classList.remove('hidden');
             
-            resultContent.innerHTML = `
+            document.getElementById('result-content').innerHTML = `
                 <div class="text-center mb-12">
                     <p class="text-[#92e350] font-bold tracking-[0.4em] uppercase text-[10px] mb-2">Analisis Selesai</p>
                     <h2 class="text-5xl font-extrabold text-white tracking-tighter">${data.negara}</h2>
@@ -417,7 +472,6 @@
                     </div>
                 </div>
 
-                <!-- PETA PREDIKSI -->
                 <div class="mt-8 overflow-hidden rounded-[32px] glass-effect border border-white/10">
                     <div id="map"></div>
                 </div>
@@ -438,17 +492,11 @@
                 </div>
             `;
             
-            // Inisialisasi peta setelah elemen dirender
             if (data.koordinat && data.koordinat.lat) {
-                setTimeout(() => {
-                    initMap(data.koordinat.lat, data.koordinat.lng, `${data.wilayah}, ${data.negara}`);
-                }, 100);
+                setTimeout(() => initMap(data.koordinat.lat, data.koordinat.lng, `${data.wilayah}, ${data.negara}`), 100);
             }
 
-            window.scrollTo({ 
-                top: resultsSection.offsetTop - 50, 
-                behavior: 'smooth' 
-            });
+            window.scrollTo({ top: resultsSection.offsetTop - 50, behavior: 'smooth' });
         }
 
         document.addEventListener('DOMContentLoaded', loadApiKey);
