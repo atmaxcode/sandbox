@@ -316,17 +316,19 @@
             
             try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
-                // Simpan semua video input untuk fitur ganti kamera
-                videoDevices = devices.filter(device => device.kind === 'videoinput');
+                // Filter hanya input video
+                const allVideoDevices = devices.filter(device => device.kind === 'videoinput');
                 
-                // Cari index kamera belakang pertama
-                currentCameraIndex = videoDevices.findIndex(d => 
-                    d.label.toLowerCase().includes('back') || 
-                    d.label.toLowerCase().includes('belakang') || 
-                    d.label.toLowerCase().includes('rear')
-                );
+                // Prioritaskan kamera belakang (hindari label 'front', 'user', 'selfie')
+                videoDevices = allVideoDevices.filter(d => {
+                    const label = d.label.toLowerCase();
+                    return !label.includes('front') && !label.includes('user') && !label.includes('selfie');
+                });
+
+                // Jika tidak ada yang berlabel 'belakang', gunakan semua (sebagai fallback)
+                if (videoDevices.length === 0) videoDevices = allVideoDevices;
                 
-                if (currentCameraIndex === -1) currentCameraIndex = 0;
+                currentCameraIndex = 0;
                 
                 await startStream(videoDevices[currentCameraIndex].deviceId);
             } catch (e) { 
@@ -342,9 +344,12 @@
             }
             
             const video = document.getElementById('camera-feed-fullscreen');
+            
+            // Konfigurasi ideal untuk kamera belakang
             const constraints = { 
                 video: { 
-                    deviceId: { exact: deviceId },
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    facingMode: deviceId ? undefined : { ideal: "environment" },
                     width: { ideal: 1920 },
                     height: { ideal: 1080 }
                 } 
@@ -355,16 +360,26 @@
                 video.srcObject = stream;
                 video.play();
             } catch (err) {
-                // Fallback jika 'exact' gagal
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                // Fallback sangat mendasar jika constraints gagal
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" } 
+                });
                 video.srcObject = stream;
             }
         }
 
         window.switchCamera = async function() {
-            if (videoDevices.length <= 1) return;
+            if (videoDevices.length <= 1) {
+                // Jika hanya ada 1 di daftar terfilter, coba ambil daftar lengkap (untuk switch ke depan jika mau)
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const allVideoDevices = devices.filter(device => device.kind === 'videoinput');
+                if (allVideoDevices.length > 1) {
+                    videoDevices = allVideoDevices;
+                } else {
+                    return;
+                }
+            }
             
-            // Lanjut ke kamera berikutnya
             currentCameraIndex = (currentCameraIndex + 1) % videoDevices.length;
             await startStream(videoDevices[currentCameraIndex].deviceId);
         };
