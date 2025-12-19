@@ -191,7 +191,7 @@
                 <img src="https://i.postimg.cc/66fp8qR9/geoscanner.png" alt="Logo" class="w-10 h-10 object-contain">
                 <div>
                     <h1 class="text-xl font-extrabold tracking-tight text-white">GeoScanner</h1>
-                    <p class="text-[10px] font-bold uppercase tracking-widest text-white/40">v2.6 Flash • Zoom</p>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-white/40">v2.7 Fixed • Zoom</p>
                 </div>
             </div>
 
@@ -219,7 +219,7 @@
                         <svg class="w-8 h-8 text-[#92e350]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.218A2 2 0 0110.457 4h3.085a2 2 0 011.664.89l.812 1.218A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><circle cx="12" cy="13" r="3" stroke-width="2"/></svg>
                     </div>
                     <span class="font-bold text-white text-center">Buka Kamera Utama</span>
-                    <span class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">Sekarang dengan fitur Zoom</span>
+                    <span class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">Kamera Belakang + Zoom</span>
                 </button>
 
                 <label class="group flex flex-col items-center justify-center p-8 rounded-[32px] glass-effect hover:bg-white/10 transition-all border border-white/5 cursor-pointer">
@@ -317,27 +317,41 @@
             const overlay = document.getElementById('camera-overlay');
             overlay.style.display = 'flex';
             
-            // Reset Zoom
             updateZoom(1);
             document.getElementById('zoom-range').value = 1;
 
             try {
+                // Berhenti dari stream lama jika ada
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const allVideoDevices = devices.filter(device => device.kind === 'videoinput');
                 
-                // Prioritaskan Kamera Belakang
+                // Cari kamera belakang yang spesifik (menghindari kamera depan/virtual)
                 videoDevices = allVideoDevices.filter(d => {
                     const label = d.label.toLowerCase();
-                    return !label.includes('front') && !label.includes('user') && !label.includes('selfie');
+                    return label.includes('back') || label.includes('rear') || label.includes('environment');
                 });
 
-                if (videoDevices.length === 0) videoDevices = allVideoDevices;
-                currentCameraIndex = 0;
+                // Jika tidak ditemukan label spesifik, ambil semua tapi balik urutannya (biasanya belakang ada di akhir)
+                if (videoDevices.length === 0) {
+                    videoDevices = allVideoDevices;
+                    currentCameraIndex = videoDevices.length - 1;
+                } else {
+                    currentCameraIndex = 0;
+                }
                 
                 await startStream(videoDevices[currentCameraIndex].deviceId);
             } catch (e) { 
-                showMessage('Gagal', 'Akses kamera ditolak oleh sistem.'); 
-                stopCamera(); 
+                // Fallback terakhir: Coba minta environment camera langsung tanpa deviceId
+                try {
+                    await startStream(null);
+                } catch (err) {
+                    showMessage('Gagal', 'Akses kamera ditolak atau tidak ditemukan.'); 
+                    stopCamera(); 
+                }
             }
         };
 
@@ -345,17 +359,19 @@
             if (stream) stream.getTracks().forEach(track => track.stop());
             const video = document.getElementById('camera-feed-fullscreen');
             
+            const constraints = {
+                video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { exact: "environment" } }
+            };
+
+            // Tambahkan resolusi ideal
+            constraints.video.width = { ideal: 1920 };
+            constraints.video.height = { ideal: 1080 };
+
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        deviceId: deviceId ? { exact: deviceId } : undefined,
-                        facingMode: deviceId ? undefined : "environment",
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    } 
-                });
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
             } catch (err) {
+                // Jika "exact environment" gagal (misal di PC), coba facingMode biasa
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 video.srcObject = stream;
             }
@@ -382,15 +398,11 @@
             const video = document.getElementById('camera-feed-fullscreen');
             const canvas = document.createElement('canvas');
             
-            // Mengambil area yang terlihat (zoom)
-            // Karena kita menggunakan CSS Scale, kita harus menghitung crop-nya secara manual jika ingin hasil persis yang terlihat.
-            // Namun untuk API AI, lebih baik mengirim gambar full resolution (unzoomed) agar AI punya konteks lebih luas, 
-            // ATAU kita kirim yang sudah di-crop. Mari kita kirim yang sudah di-crop sesuai zoom agar detailnya maksimal sesuai keinginan user.
-            
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext('2d');
             
+            // Logika Crop Zoom: Mengambil area tengah sesuai faktor zoom
             if (currentZoom > 1) {
                 const sw = video.videoWidth / currentZoom;
                 const sh = video.videoHeight / currentZoom;
