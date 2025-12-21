@@ -16,7 +16,7 @@ async function uploadToGemini(event) {
     }]
   };
 
-  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=AIzaSyBNceTzp5X5YbrbI_KtrUST9Ni4tezfM4M", {
+  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=XXXAIzaSyBNceTzp5X5YbrbIXXX_KtrUST9Ni4tezfM4MXXX", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(geminiPayload)
