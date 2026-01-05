@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GeoScanner by Atmax</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        /* SQUIRCLE DESIGN SYSTEM */
+        :root {
+            --squircle-lg: 2rem;
+            --squircle-md: 1.5rem;
+            --squircle-sm: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            :root {
+                --squircle-lg: 3rem;
+                --squircle-md: 2rem;
+                --squircle-sm: 1.25rem;
+            }
+        }
+
+        body {
+            background-color: #0a0a0c;
+            color: #e2e8f0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--squircle-sm);
+            padding: 1.25rem;
+        }
+
+        #map {
+            height: 300px;
+            width: 100%;
+            z-index: 1;
+            border-radius: var(--squircle-md);
+        }
+
+        @media (min-width: 768px) {
+            #map { height: 400px; }
+        }
+
+        .custom-button {
+            background: #92e350;
+            color: #000;
+            font-weight: 800;
+            border-radius: var(--squircle-sm);
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+        }
+
+        .custom-button:active {
+            transform: scale(0.98);
+        }
+
+        .input-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: var(--squircle-md);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .shared-pool-trigger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 6px 12px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 9px;
+            font-weight: 900;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        td {
+            padding: 10px 12px;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: top;
+        }
+
+        #camera-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: var(--squircle-md);
+        }
+
+        input[type="text"], input[type="password"] {
+            font-size: 16px !important;
+        }
+
+        .brand-badge {
+            background-color: #92e350;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.55rem;
+            font-weight: 600;
+            vertical-align: middle;
+            margin-left: 6px;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1;
+            transform: translateY(-1px);
+        }
+
+        .brand-badge span {
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-left: 3px;
+        }
+
+        @media (min-width: 768px) {
+            .brand-badge {
+                padding: 2px 8px;
+                font-size: 0.6rem;
+                margin-left: 8px;
+                border-radius: 5px;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 justify-center items-center">
+
+    <div class="w-full max-w-4xl flex flex-col py-8 md:py-0">
+        <!-- Header -->
+        <div class="flex flex-row items-center justify-between mb-8 md:mb-12">
+            <div class="flex items-center gap-2 md:gap-3">
+                <img src="https://i.postimg.cc/66fp8qR9/geoscanner.png" alt="GeoScanner Logo" class="w-8 h-8 md:w-10 md:h-10 object-contain">
+                <div>
+                    <h1 class="text-lg md:text-2xl font-black tracking-tighter text-white leading-none flex items-center">
+                        GeoScanner <span class="brand-badge">by <span>Atmax</span></span>
+                    </h1>
+                    <p class="text-gray-500 text-[8px] md:text-[9px] font-medium tracking-widest uppercase mt-1">V2x4012025</p>
+                </div>
+            </div>
+            
+            <button onclick="openApiModal()" class="flex items-center gap-2 px-2 py-2 hover:opacity-80 transition-all bg-transparent">
+                <svg id="api-status-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-4 md:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+                <span class="hidden md:inline text-xs font-bold text-gray-300 uppercase tracking-widest text-right">API Setting</span>
+            </button>
+        </div>
+
+        <!-- Input Section -->
+        <div id="input-controls" class="my-auto">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <label class="input-box p-8 md:p-12 flex flex-col items-center justify-center group">
+                    <div class="w-14 h-14 md:w-16 md:h-16 bg-white/5 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 group-hover:bg-[#92e350]/20 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 md:h-8 md:w-8 text-[#92e350]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <span class="text-xl md:text-2xl font-black text-white mb-1">Pilih Gambar</span>
+                    <span class="text-gray-500 text-[10px] uppercase font-bold tracking-[0.2em]">Galeri / File</span>
+                    <input type="file" id="file-input" accept="image/*" onchange="handleFileChange(event)" class="hidden">
+                </label>
+
+                <button onclick="startCamera()" class="input-box p-8 md:p-12 flex flex-col items-center justify-center group">
+                    <div class="w-14 h-14 md:w-16 md:h-16 bg-white/5 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 group-hover:bg-[#92e350]/20 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 md:h-8 md:w-8 text-[#92e350]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </div>
+                    <span class="text-xl md:text-2xl font-black text-white mb-1">Ambil Foto</span>
+                    <span class="text-gray-500 text-[10px] uppercase font-bold tracking-[0.2em]">Kamera Langsung</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Camera Section -->
+        <div id="camera-container" class="hidden my-auto space-y-4">
+            <div style="border-radius: var(--squircle-lg);" class="relative overflow-hidden border border-white/10 bg-black h-[60vh] md:h-[500px] flex items-center justify-center shadow-2xl">
+                <video id="camera-stream" autoplay playsinline class="w-full h-full object-cover"></video>
+                <div class="absolute inset-0 pointer-events-none border-[20px] md:border-[40px] border-black/20 flex items-center justify-center">
+                    <div style="border-radius: var(--squircle-sm);" class="w-full h-full border border-white/20"></div>
+                </div>
+                <div class="absolute bottom-6 md:bottom-10 left-0 right-0 flex justify-center items-center gap-6 md:gap-10">
+                    <button onclick="stopCamera()" class="bg-black/40 hover:bg-black/60 text-white p-3 md:p-4 rounded-full backdrop-blur-md transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <button id="shutter-btn" onclick="capturePhoto()" class="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full border-[4px] md:border-[6px] border-white/30 active:scale-90 transition-all flex items-center justify-center shadow-2xl">
+                        <div class="w-10 h-10 md:w-14 md:h-14 border-2 border-black/10 rounded-full"></div>
+                    </button>
+                    <div class="w-10 md:w-14"></div>
+                </div>
+            </div>
+            <p class="text-center text-gray-500 text-[9px] font-black uppercase tracking-widest">Fokus pada jalan atau bangunan</p>
+        </div>
+
+        <!-- Preview Section -->
+        <div id="image-preview-container" class="hidden my-auto space-y-4">
+            <div class="relative group">
+                <img id="image-preview" src="" alt="Preview" style="border-radius: var(--squircle-md);" class="w-full border border-white/10 shadow-2xl max-h-[50vh] md:max-h-[600px] object-cover">
+                <button onclick="resetImage()" class="absolute top-4 right-4 bg-black/60 text-white p-2 rounded-full backdrop-blur-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            <button id="analyze-button" onclick="analyzeImage()" disabled class="custom-button w-full py-5 md:py-6 flex items-center justify-center gap-3 text-base md:text-lg">
+                <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-3 border-black border-t-transparent rounded-full"></span>
+                <span id="button-text">Analisis Lokasi</span>
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="hidden space-y-4 md:space-y-6 mb-10 md:mb-20">
+            <div id="result-content" style="border-radius: var(--squircle-lg);" class="glass-effect p-5 md:p-10 border border-white/10 shadow-2xl"></div>
+        </div>
+    </div>
+
+    <!-- API Modal -->
+    <div id="api-modal" class="fixed inset-0 hidden bg-black/80 flex items-center justify-center p-4 z-[110] backdrop-blur-md">
+        <div style="border-radius: var(--squircle-lg);" class="bg-zinc-900 p-6 md:p-8 max-w-lg w-full border border-white/10 shadow-2xl">
+            <div class="flex items-start justify-between mb-6 md:mb-8">
+                <div>
+                    <h3 class="text-lg md:text-xl font-black text-white leading-tight">API Setting</h3>
+                    <p class="text-[9px] text-gray-500 font-medium mt-1 uppercase tracking-widest">Konfigurasi Engine</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openSharedPoolModal()" class="shared-pool-trigger">
+                        <span class="text-base">🔥</span>
+                        <span class="bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded">Free</span>
+                    </button>
+                    <button onclick="showApiTutorial()" class="w-8 h-8 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center text-blue-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-5">
+                <div class="relative">
+                    <p class="text-[9px] text-gray-500 uppercase font-bold mb-2 ml-1">Manual API Key</p>
+                    <div class="relative flex items-center">
+                        <input style="border-radius: var(--squircle-sm);" type="password" id="api-key-input" placeholder="Masukkan Key..." class="w-full bg-white/5 border border-white/10 px-4 py-3.5 text-white focus:outline-none focus:border-[#92e350] pr-24">
+                        <div class="absolute right-4 flex items-center gap-3">
+                            <button onclick="toggleKeyVisibility()" class="text-gray-500 hover:text-white transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            </button>
+                            <button onclick="clearApiKey()" class="text-red-500/60 hover:text-red-500 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row gap-3 pt-2">
+                    <button id="save-api-btn" style="border-radius: var(--squircle-sm);" onclick="saveApiKey()" class="w-full py-4 bg-[#92e350] text-black font-black flex items-center justify-center gap-2">
+                        <span id="save-spinner" class="hidden animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full"></span>
+                        <span id="save-text">Simpan</span>
+                    </button>
+                    <button style="border-radius: var(--squircle-sm);" onclick="closeApiModal()" class="w-full py-4 bg-white/5 text-white font-bold">Batal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shared Pool Modal -->
+    <div id="shared-pool-modal" class="fixed inset-0 hidden bg-black/95 flex items-center justify-center p-4 z-[120] backdrop-blur-xl">
+        <div style="border-radius: var(--squircle-lg);" class="bg-zinc-900/90 p-6 md:p-8 max-w-xl w-full border border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 md:w-12 md:h-12 bg-orange-500/10 flex items-center justify-center text-2xl rounded-xl">🔥</div>
+                    <div>
+                        <h4 class="text-white font-black text-xl tracking-tight">FREE API Gemini</h4>
+                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Harap Gunakan Dengan Bijak! Jangan Lupa Kontribusi Juga.</p>
+                    </div>
+                </div>
+                <button onclick="closeSharedPoolModal()" class="text-gray-500 p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <button style="border-radius: var(--squircle-sm);" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSckM5DtUOgfjvfZMdLCS2nvvYuewv9Y9EpUK8cbQBQ1FbiOlQ/viewform?usp=dialog', '_blank')" class="w-full mb-6 py-4 bg-[#92e350] text-[10px] font-black text-black uppercase">
+                ➕ Kontribusi API Key
+            </button>
+            <div style="border-radius: var(--squircle-md);" class="bg-black/40 overflow-hidden border border-white/5">
+                <div class="overflow-x-auto">
+                    <table>
+                        <thead>
+                            <tr><th>Kontributor</th><th>Status</th><th class="text-right">Aksi</th></tr>
+                        </thead>
+                        <tbody id="pool-list-container">
+                            <tr id="loading-pool"><td colspan="3" class="text-center py-10 text-gray-500 text-xs uppercase font-bold tracking-widest">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="message-modal" class="fixed inset-0 hidden bg-black/90 flex items-center justify-center p-6 z-[130] backdrop-blur-md">
+        <div style="border-radius: var(--squircle-lg);" class="bg-zinc-900 p-8 max-w-md w-full border border-white/10 text-center">
+            <h3 id="modal-title" class="text-xl font-black mb-4 text-white"></h3>
+            <div id="modal-desc" class="text-gray-400 text-sm mb-6 leading-relaxed"></div>
+            <button style="border-radius: var(--squircle-sm);" onclick="closeModal()" class="w-full py-4 bg-[#92e350]/10 text-[#92e350] font-bold">Tutup</button>
+        </div>
+    </div>
+
+    <canvas id="capture-canvas" class="hidden"></canvas>
+
+    <script>
+        const PUBLIC_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRo73KtbjL9lD4iLDSTIdj6ZYZMe0Du_TciZSjucxCrzy_uHN4KYTV_MeOcLsexOtsqpIRwOJIYDtAc/pub?gid=0&single=true&output=csv";
+        const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
+        let base64Image = null, mapInstance = null, cameraStream = null;
+
+        function getStoredApiKey() { return localStorage.getItem('geoscanner_api_key') || ""; }
+        function maskApiKey(key) { return key ? key.substring(0, 5) + "****************" : ""; }
+
+        function updateHeaderApiIndicator() {
+            const key = getStoredApiKey();
+            const icon = document.getElementById('api-status-icon');
+            if (icon) icon.style.color = key ? '#92e350' : '#ef4444';
+        }
+
+        function openApiModal() { 
+            const storedKey = getStoredApiKey();
+            const input = document.getElementById('api-key-input');
+            input.value = maskApiKey(storedKey); 
+            input.type = "password";
+            document.getElementById('api-modal').classList.remove('hidden'); 
+        }
+
+        function closeApiModal() { document.getElementById('api-modal').classList.add('hidden'); }
+        
+        function openSharedPoolModal() { 
+            closeApiModal(); 
+            document.getElementById('shared-pool-modal').classList.remove('hidden'); 
+            fetchPoolData(); 
+        }
+        
+        function closeSharedPoolModal() { 
+            document.getElementById('shared-pool-modal').classList.add('hidden'); 
+            openApiModal();
+        }
+
+        async function fetchPoolData() {
+            const container = document.getElementById('pool-list-container');
+            try {
+                const response = await fetch(`${PUBLIC_CSV_URL}&t=${Date.now()}`);
+                const csvData = await response.text();
+                const lines = csvData.split(/\r?\n/).filter(line => line.trim().length > 0);
+                const items = lines.slice(1).map(line => {
+                    const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+                    if (!matches || matches.length < 3) return null;
+                    const clean = (str) => str.replace(/^"|"$/g, '').trim();
+                    return { provider: clean(matches[0]), key: clean(matches[1]), status: clean(matches[2]) };
+                }).filter(i => i !== null);
+
+                container.innerHTML = items.map(item => {
+                    const isActive = item.status.toLowerCase() === 'active';
+                    return `
+                        <tr>
+                            <td class="font-bold text-[11px] ${isActive ? 'text-white' : 'text-gray-500'}">${item.provider}</td>
+                            <td><span class="${isActive ? 'text-[#92e350]' : 'text-red-500'} text-[8px] font-black px-1.5 py-0.5 rounded uppercase">${item.status}</span></td>
+                            <td class="text-right">${isActive ? `<button style="border-radius: 8px;" onclick="useSharedKey('${item.provider}', '${item.key}')" class="bg-[#92e350] text-black text-[9px] font-black px-3 py-1.5">Gunakan</button>` : '<span class="text-gray-600 text-[9px] font-black uppercase pr-2">OFF</span>'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) { container.innerHTML = '<tr><td colspan="3" class="text-center py-10 text-red-500 text-xs">Gagal memuat data</td></tr>'; }
+        }
+
+        function useSharedKey(provider, key) {
+            localStorage.setItem('geoscanner_api_key', key);
+            updateHeaderApiIndicator();
+            document.getElementById('shared-pool-modal').classList.add('hidden');
+            showMessage('Berhasil', `Menggunakan API Key dari <b>${provider}</b>.`);
+        }
+
+        function saveApiKey() {
+            const btn = document.getElementById('save-api-btn');
+            const spinner = document.getElementById('save-spinner');
+            const text = document.getElementById('save-text');
+            const inputVal = document.getElementById('api-key-input').value.trim();
+            
+            // Kesan Tersimpan (Loading State)
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
+            text.textContent = "Menyimpan...";
+
+            setTimeout(() => {
+                if(!inputVal.includes('*')) {
+                    if(!inputVal) {
+                        localStorage.removeItem('geoscanner_api_key');
+                    } else {
+                        localStorage.setItem('geoscanner_api_key', inputVal);
+                    }
+                }
+                
+                updateHeaderApiIndicator();
+                
+                // Kembali ke Index (Reset View State)
+                closeApiModal();
+                resetImage(); // Fungsi ini mengembalikan UI ke index
+                
+                // Reset Button UI for next open
+                btn.disabled = false;
+                spinner.classList.add('hidden');
+                text.textContent = "Simpan";
+            }, 800);
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem('geoscanner_api_key');
+            document.getElementById('api-key-input').value = "";
+            updateHeaderApiIndicator();
+        }
+
+        function toggleKeyVisibility() {
+            const input = document.getElementById('api-key-input');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        function showMessage(title, desc) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-desc').innerHTML = desc;
+            document.getElementById('message-modal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('message-modal').classList.add('hidden'); }
+
+        function showApiTutorial() {
+            const content = `
+                <div class="text-left space-y-3 text-xs">
+                    <p>1. Ke <a href="https://aistudio.google.com/" target="_blank" class="text-[#92e350] underline">Google AI Studio</a>.</p>
+                    <p>2. Klik <b>"Get API key"</b>.</p>
+                    <p>3. Pilih <b>"Create API key"</b>.</p>
+                    <p>4. Copy & paste di kotak Manual API Key.</p>
+                </div>
+            `;
+            showMessage('Cara Dapat API Key', content);
+        }
+
+        async function startCamera() {
+            try {
+                const constraints = { 
+                    video: { 
+                        facingMode: "environment",
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    } 
+                };
+                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                const video = document.getElementById('camera-stream');
+                video.srcObject = cameraStream;
+                video.onloadedmetadata = () => video.play();
+
+                document.getElementById('input-controls').classList.add('hidden');
+                document.getElementById('camera-container').classList.remove('hidden');
+            } catch (e) { 
+                showMessage('Error', 'Gagal akses kamera. Periksa izin browser.'); 
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(t => t.stop());
+                cameraStream = null;
+            }
+            document.getElementById('camera-container').classList.add('hidden');
+            document.getElementById('input-controls').classList.remove('hidden');
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('camera-stream');
+            const canvas = document.getElementById('capture-canvas');
+            if (video.readyState !== 4) return;
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            
+            video.style.opacity = "0.5";
+            setTimeout(() => video.style.opacity = "1", 100);
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            
+            if (dataUrl.length < 1000) { 
+                requestAnimationFrame(capturePhoto);
+                return;
+            }
+
+            base64Image = dataUrl.split(',')[1];
+            document.getElementById('image-preview').src = dataUrl;
+            document.getElementById('image-preview-container').classList.remove('hidden');
+            document.getElementById('analyze-button').disabled = false;
+            stopCamera();
+        }
+
+        window.handleFileChange = (e) => {
+            const f = e.target.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = (ev) => {
+                base64Image = ev.target.result.split(',')[1];
+                document.getElementById('image-preview').src = ev.target.result;
+                document.getElementById('image-preview-container').classList.remove('hidden');
+                document.getElementById('input-controls').classList.add('hidden');
+                document.getElementById('analyze-button').disabled = false;
+            };
+            r.readAsDataURL(f);
+        };
+
+        window.resetImage = () => {
+            base64Image = null;
+            document.getElementById('image-preview-container').classList.add('hidden');
+            document.getElementById('input-controls').classList.remove('hidden');
+            document.getElementById('results-section').classList.add('hidden');
+            document.getElementById('file-input').value = "";
+        };
+
+        async function analyzeImage() {
+            const key = getStoredApiKey();
+            if(!key) { openApiModal(); return; }
+            const btn = document.getElementById('analyze-button'), spinner = document.getElementById('loading-spinner');
+            btn.disabled = true; spinner.classList.remove('hidden');
+            
+            try {
+                const prompt = `Analyze this image for geographical location identification.
+Return ONLY a valid JSON object:
+{
+  "negara": "Country name",
+  "kota": "City/region",
+  "bahasa": "Language",
+  "koordinat": {"lat": number, "lng": number},
+  "analisis_visual": [
+    {"kategori": "Arsitektur", "detail": "..."},
+    {"kategori": "Alam", "detail": "..."},
+    {"kategori": "Jalanan", "detail": "..."},
+    {"kategori": "Lainnya", "detail": "..."}
+  ]
+}
+Indonesian for details. No markdown.`;
+
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${key}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{text: prompt}, {inlineData: {mimeType: "image/jpeg", data: base64Image}}]}] })
+                });
+                const data = await response.json();
+                const rawText = data.candidates[0].content.parts[0].text;
+                const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("Format salah");
+                renderResults(JSON.parse(jsonMatch[0]));
+            } catch (e) { 
+                showMessage('Gagal', 'Terjadi kesalahan analisis. Cek koneksi atau API Key.'); 
+            } finally { 
+                btn.disabled = false; spinner.classList.add('hidden'); 
+            }
+        }
+
+        function renderResults(data) {
+            const tableRows = (data.analisis_visual || []).map(item => `
+                <tr>
+                    <td class="font-black text-[9px] text-[#92e350] tracking-wider uppercase">${item.kategori}</td>
+                    <td class="text-gray-300">${item.detail}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('results-section').classList.remove('hidden');
+            document.getElementById('result-content').innerHTML = `
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl md:text-4xl font-black text-white tracking-tighter">${data.negara || 'Terdeteksi'}</h2>
+                    <p class="text-[#92e350] font-bold mt-1 uppercase text-[10px] tracking-[0.2em]">${data.kota || ''}</p>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                    <div class="result-card"><p class="text-[9px] text-white/40 mb-1 uppercase font-bold">BAHASA</p><p class="font-bold text-xs text-white">${data.bahasa || '-'}</p></div>
+                    <div class="result-card"><p class="text-[9px] text-white/40 mb-1 uppercase font-bold">KOORDINAT</p><p class="font-bold text-xs text-white">${data.koordinat.lat.toFixed(4)}, ${data.koordinat.lng.toFixed(4)}</p></div>
+                </div>
+
+                <div style="border-radius: var(--squircle-md);" class="result-card mb-6 overflow-hidden !p-0">
+                    <div class="p-3 border-b border-white/5 bg-white/[0.02] flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-[#92e350]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        <p class="text-[9px] text-white font-black uppercase tracking-widest">Temuan Visual</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="map"></div>
+                <div class="mt-4 flex justify-center">
+                    <button onclick="window.open('https://www.google.com/maps?q=${data.koordinat.lat},${data.koordinat.lng}', '_blank')" class="text-[10px] font-black text-white/40 uppercase tracking-widest hover:text-[#92e350] transition-colors flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        Buka di Google Maps
+                    </button>
+                </div>
+            `;
+            
+            setTimeout(() => {
+                if (mapInstance) mapInstance.remove();
+                mapInstance = L.map('map', { zoomControl: false }).setView([data.koordinat.lat, data.koordinat.lng], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapInstance);
+                L.marker([data.koordinat.lat, data.koordinat.lng]).addTo(mapInstance);
+            }, 300);
+        }
+
+        window.onload = () => { updateHeaderApiIndicator(); };
+    </script>
+</body>
+</html>
