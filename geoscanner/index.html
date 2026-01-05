@@ -117,6 +117,7 @@
             height: 100%;
             object-fit: cover;
             border-radius: var(--squircle-md);
+            transform-origin: center;
         }
 
         input[type="text"], input[type="password"] {
@@ -142,6 +143,27 @@
             font-weight: 900;
             text-transform: uppercase;
             margin-left: 3px;
+        }
+
+        /* Zoom Control Slider Customization */
+        .zoom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .zoom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #92e350;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
         }
 
         @media (min-width: 768px) {
@@ -208,9 +230,34 @@
         <div id="camera-container" class="hidden my-auto space-y-4">
             <div style="border-radius: var(--squircle-lg);" class="relative overflow-hidden border border-white/10 bg-black h-[60vh] md:h-[500px] flex items-center justify-center shadow-2xl">
                 <video id="camera-stream" autoplay playsinline class="w-full h-full object-cover"></video>
+                
+                <!-- Zoom Label Overlay -->
+                <div class="absolute top-4 left-4 pointer-events-none">
+                    <span id="zoom-value-badge" class="bg-black/60 text-white text-[10px] font-black px-2 py-1 rounded-md border border-white/10">1.0x</span>
+                </div>
+
+                <!-- Switch Camera Button -->
+                <div class="absolute top-4 right-4">
+                    <button id="switch-cam-btn" onclick="switchCamera()" class="bg-black/60 text-white p-2.5 rounded-full border border-white/10 active:scale-90 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+
                 <div class="absolute inset-0 pointer-events-none border-[20px] md:border-[40px] border-black/20 flex items-center justify-center">
                     <div style="border-radius: var(--squircle-sm);" class="w-full h-full border border-white/20"></div>
                 </div>
+
+                <!-- Zoom Controls Overlay -->
+                <div class="absolute bottom-28 md:bottom-36 left-0 right-0 flex justify-center px-10">
+                    <div class="w-full max-w-xs flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/5">
+                        <span class="text-white text-[10px] font-bold">1x</span>
+                        <input type="range" id="zoom-slider" min="1" max="5" step="0.1" value="1" oninput="handleZoom(this.value)" class="zoom-slider flex-grow">
+                        <span class="text-white text-[10px] font-bold">5x</span>
+                    </div>
+                </div>
+
                 <div class="absolute bottom-6 md:bottom-10 left-0 right-0 flex justify-center items-center gap-6 md:gap-10">
                     <button onclick="stopCamera()" class="bg-black/40 hover:bg-black/60 text-white p-3 md:p-4 rounded-full backdrop-blur-md transition-all">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -223,7 +270,7 @@
                     <div class="w-10 md:w-14"></div>
                 </div>
             </div>
-            <p class="text-center text-gray-500 text-[9px] font-black uppercase tracking-widest">Fokus pada jalan atau bangunan</p>
+            <p class="text-center text-gray-500 text-[9px] font-black uppercase tracking-widest">Gunakan slider zoom untuk detail micro</p>
         </div>
 
         <!-- Preview Section -->
@@ -344,6 +391,11 @@
         const PUBLIC_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRo73KtbjL9lD4iLDSTIdj6ZYZMe0Du_TciZSjucxCrzy_uHN4KYTV_MeOcLsexOtsqpIRwOJIYDtAc/pub?gid=0&single=true&output=csv";
         const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
         let base64Image = null, mapInstance = null, cameraStream = null;
+        
+        // Camera Features State
+        let currentZoom = 1;
+        let videoDevices = [];
+        let currentDeviceIndex = 0;
 
         function getStoredApiKey() { return localStorage.getItem('geoscanner_api_key') || ""; }
         function maskApiKey(key) { return key ? key.substring(0, 5) + "****************" : ""; }
@@ -414,7 +466,6 @@
             const text = document.getElementById('save-text');
             const inputVal = document.getElementById('api-key-input').value.trim();
             
-            // Kesan Tersimpan (Loading State)
             btn.disabled = true;
             spinner.classList.remove('hidden');
             text.textContent = "Menyimpan...";
@@ -429,12 +480,9 @@
                 }
                 
                 updateHeaderApiIndicator();
-                
-                // Kembali ke Index (Reset View State)
                 closeApiModal();
-                resetImage(); // Fungsi ini mengembalikan UI ke index
+                resetImage();
                 
-                // Reset Button UI for next open
                 btn.disabled = false;
                 spinner.classList.add('hidden');
                 text.textContent = "Simpan";
@@ -472,25 +520,125 @@
             showMessage('Cara Dapat API Key', content);
         }
 
+        // --- IMPROVED CAMERA ENGINE ---
+
         async function startCamera() {
             try {
-                const constraints = { 
-                    video: { 
-                        facingMode: "environment",
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    } 
-                };
-                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-                const video = document.getElementById('camera-stream');
-                video.srcObject = cameraStream;
-                video.onloadedmetadata = () => video.play();
+                // Discover cameras
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                videoDevices = devices.filter(d => d.kind === 'videoinput');
+                
+                if (videoDevices.length === 0) {
+                    showMessage('Error', 'Tidak ada kamera yang ditemukan di perangkat ini.');
+                    return;
+                }
+
+                // Prefer rear cameras for better focus/macro
+                const backCams = videoDevices.filter(d => 
+                    d.label.toLowerCase().includes('back') || 
+                    d.label.toLowerCase().includes('rear') || 
+                    d.label.toLowerCase().includes('camera 0')
+                );
+                
+                if(backCams.length > 0) {
+                    currentDeviceIndex = videoDevices.indexOf(backCams[0]);
+                } else {
+                    currentDeviceIndex = 0;
+                }
+
+                await initStream();
 
                 document.getElementById('input-controls').classList.add('hidden');
                 document.getElementById('camera-container').classList.remove('hidden');
             } catch (e) { 
-                showMessage('Error', 'Gagal akses kamera. Periksa izin browser.'); 
+                console.error("Camera access error:", e);
+                showMessage('Error', 'Gagal akses kamera. Pastikan browser tidak memblokir akses dan tidak sedang digunakan aplikasi lain.'); 
             }
+        }
+
+        async function initStream() {
+            // Stop existing tracks safely
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(t => t.stop());
+                cameraStream = null;
+            }
+
+            const video = document.getElementById('camera-stream');
+            const device = videoDevices[currentDeviceIndex];
+            
+            // Tiered constraints: try HD first, then fall back to defaults
+            const constraintsList = [
+                { 
+                    video: { 
+                        deviceId: device ? { exact: device.deviceId } : undefined,
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    } 
+                },
+                { 
+                    video: { 
+                        deviceId: device ? { exact: device.deviceId } : undefined
+                    } 
+                },
+                { 
+                    video: { facingMode: "environment" } 
+                }
+            ];
+
+            let lastError = null;
+            for (let constraints of constraintsList) {
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    if (cameraStream) break;
+                } catch (e) {
+                    lastError = e;
+                    continue;
+                }
+            }
+
+            if (!cameraStream) {
+                throw lastError || new Error("Unable to get media stream");
+            }
+            
+            video.srcObject = cameraStream;
+            video.onloadedmetadata = () => {
+                video.play().catch(e => console.error("Video play error:", e));
+                resetZoom(); 
+            };
+        }
+
+        async function switchCamera() {
+            if (videoDevices.length < 2) {
+                showMessage('Info', 'Hanya satu kamera terdeteksi di perangkat ini.');
+                return;
+            }
+            const btn = document.getElementById('switch-cam-btn');
+            btn.disabled = true;
+            currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length;
+            try {
+                await initStream();
+            } catch (e) {
+                showMessage('Error', 'Gagal berpindah ke kamera ini.');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function handleZoom(val) {
+            currentZoom = parseFloat(val);
+            const video = document.getElementById('camera-stream');
+            const badge = document.getElementById('zoom-value-badge');
+            
+            // Apply CSS zoom (Digital zoom effect)
+            video.style.transform = `scale(${currentZoom})`;
+            badge.textContent = currentZoom.toFixed(1) + 'x';
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            const slider = document.getElementById('zoom-slider');
+            if(slider) slider.value = 1;
+            handleZoom(1);
         }
 
         function stopCamera() {
@@ -514,14 +662,17 @@
             video.style.opacity = "0.5";
             setTimeout(() => video.style.opacity = "1", 100);
 
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-            
-            if (dataUrl.length < 1000) { 
-                requestAnimationFrame(capturePhoto);
-                return;
+            if (currentZoom > 1) {
+                const w = canvas.width / currentZoom;
+                const h = canvas.height / currentZoom;
+                const x = (canvas.width - w) / 2;
+                const y = (canvas.height - h) / 2;
+                ctx.drawImage(video, x, y, w, h, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             }
 
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
             base64Image = dataUrl.split(',')[1];
             document.getElementById('image-preview').src = dataUrl;
             document.getElementById('image-preview-container').classList.remove('hidden');
