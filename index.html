@@ -7,11 +7,19 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
   <style>
+    /* Reset total untuk memastikan tidak ada space sisa */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: "DotGothic16", sans-serif;
-      margin: 0;
       background-color: #121212;
-      overflow: hidden; /* Menghilangkan scroll di level body */
+      overflow: hidden; 
+      height: 100vh;
+      width: 100vw;
     }
 
     /* Scrolling text container */
@@ -48,13 +56,23 @@
         font-size: 10rem;
       }
     }
+
+    /* Menghilangkan potensi gap di bawah elemen block */
+    footer, div {
+      display: flex;
+    }
+    
+    .bottom-container {
+      display: flex;
+      flex-direction: column;
+    }
   </style>
 </head>
 <body class="bg-[#121212] text-[#eeeae8]">
-  <!-- Wrapper utama dipastikan setinggi layar penuh tanpa sisa -->
+  <!-- Container utama dengan h-screen dan flex-col -->
   <div class="flex flex-col h-screen w-full overflow-hidden">
     
-    <!-- HERO SECTION (Area Tengah yang fleksibel) -->
+    <!-- HERO SECTION (Mengambil sisa ruang) -->
     <div class="flex-1 flex items-center overflow-hidden">
       <div class="scrolling-container">
         <div class="scrolling-wrapper">
@@ -72,10 +90,10 @@
       </div>
     </div>
 
-    <!-- BOTTOM SECTION (Bagian Bawah yang pas di dasar) -->
-    <div class="w-full bg-[#121212]">
+    <!-- BOTTOM SECTION (Ditempelkan ke paling bawah tanpa gap) -->
+    <div class="bottom-container w-full bg-[#121212] mt-auto">
       <!-- LINKS SECTION -->
-      <div class="px-6 md:px-16 py-8 border-t border-[#222222] text-sm flex flex-col md:flex-row justify-between items-end gap-8">
+      <div class="px-6 md:px-16 py-8 border-t border-[#222222] text-sm flex flex-col md:flex-row justify-between items-end gap-8 w-full">
         <div class="flex flex-col space-y-3 w-full md:w-auto text-left">
           <a href="https://dsgn.atmax.id" target="_blank" class="flex items-center space-x-2 text-[#eeeae8] hover:underline group">
             <span>atmaxdsgn</span>
@@ -112,7 +130,7 @@
       </div>
 
       <!-- FOOTER -->
-      <footer class="flex justify-between items-center px-6 md:px-16 py-5 border-t border-[#222222] text-xs uppercase tracking-widest opacity-60">
+      <footer class="flex justify-between items-center px-6 md:px-16 py-5 border-t border-[#222222] text-xs uppercase tracking-widest opacity-60 w-full">
         <span>© atmax 2025</span>
         <a href="#" class="hover:underline flex items-center gap-1">
           <span>Top</span>
