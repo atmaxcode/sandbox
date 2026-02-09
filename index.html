@@ -2,152 +2,189 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to Atmax.id</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>sandbox.atmax.id</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+  <!-- Heroicons CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/heroicons@1.0.6/outline/index.js"></script>
   <style>
-    /* Reset total dan paksa ukuran layar tanpa toleransi */
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100vh;
-      height: 100dvh; /* Menggunakan Dynamic Viewport Height untuk mobile */
-      overflow: hidden;
-      background-color: #121212;
-      position: fixed; /* Mencegah overscroll pada beberapa browser */
+    html, body { scroll-behavior: smooth; }
+
+    /* Kartu dengan efek kaca */
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(14px) saturate(1.2);
+      -webkit-backdrop-filter: blur(14px) saturate(1.2);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.25);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    /* Efek hover - zoom in dan bayangan lebih besar */
+    .glass:hover {
+      transform: scale(1.05); /* Zoom effect */
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3); /* Larger shadow */
     }
 
-    body {
-      font-family: "DotGothic16", sans-serif;
+    /* Efek blur pada kartu yang tidak di-hover */
+    #cardsGrid > article {
+      transition: filter 0.28s ease, transform 0.28s ease;
     }
 
-    /* Scrolling text container */
-    .scrolling-container {
-      overflow: hidden;
-      white-space: nowrap;
-      width: 100%;
+    /* Default kartu jelas tanpa blur */
+    #cardsGrid > article {
+      filter: none;
+      transform: scale(1);
     }
 
-    .scrolling-wrapper {
-      display: inline-flex;
-      align-items: center;
-      font-weight: 800;
-      font-size: 3.5rem;
-      line-height: 1.1;
-      gap: 2rem;
-      animation: scrollRightToLeft 30s linear infinite;
-      padding-left: 100vw;
+    /* Kartu yang tidak di-hover akan blur */
+    #cardsGrid > article.dim {
+      filter: blur(4px) brightness(1.06) saturate(0); /* Efek blur */
+      transform: scale(0.98); /* Mengurangi ukuran kartu */
+      box-shadow: none !important;
+      background: rgba(255, 255, 255, 0.62) !important;
     }
 
-    @keyframes scrollRightToLeft {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-100%); }
+    #cardsGrid > article.dim .media > img,
+    #cardsGrid > article.dim .media > video {
+      filter: grayscale(100%) saturate(0) brightness(0.9); /* Mengubah gambar/video menjadi abu-abu */
     }
 
-    /* Responsive font size */
-    @media (min-width: 768px) {
-      .scrolling-wrapper {
-        font-size: 7rem;
-      }
-    }
-    @media (min-width: 1280px) {
-      .scrolling-wrapper {
-        font-size: 10rem;
-      }
-    }
-
-    /* Menghilangkan sisa space di bawah elemen block */
-    .bottom-section-wrapper {
-      display: flex;
-      flex-direction: column;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background-color: #121212;
-    }
+    .media > img, .media > video { filter: none; transition: filter .25s; }
   </style>
 </head>
-<body class="bg-[#121212] text-[#eeeae8]">
-  <!-- Container utama -->
-  <div class="relative flex flex-col h-full w-full overflow-hidden">
+<body class="bg-neutral-50 text-slate-900 font-inter antialiased">
+  <header class="sticky top-0 z-50 bg-neutral-50/70 backdrop-blur border-b">
+    <div class="max-w-6xl mx-auto px-6 flex justify-between h-16 items-center">
+      <a href="#" class="flex items-center gap-2 font-semibold">
+        <img src="https://i.imgur.com/KOlmei1.gif" alt="logo" class="h-8 w-8 object-contain" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+        <span>sandbox.atmax.id</span>
+      </a>
+    </div>
+  </header>
+
+  <section id="bawah" class="py-10 md:py-16">
+    <div class="max-w-6xl mx-auto px-6">
+      <!-- Grid untuk dua kartu -->
+      <div id="cardsGrid" class="grid md:grid-cols-2 gap-8">
+<!-- Kartu ke1 -->
+        <article class="glassx rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
+          <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#ff772e"></div>
+          <div class="relative z-10">
+            <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
+              <span class="icon w-5 h-5 grid place-items-center text-slate-700">
+                <!-- Ikon Tiket (Heroicon) -->
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672Zm-7.518-.267A8.25 8.25 0 1 1 20.25 10.5M8.288 14.212A5.25 5.25 0 1 1 17.25 10.5" />
+</svg>
+              </span>
+              <span class="badge">Tools</span>
+            </span>
+            <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight">Paste Mini v1</h3>
+            <p class="mt-4 text-slate-800/90">Tools buat bikin notes simple, gk ribet dan cepat!.</p>
+            <a href="https://sandbox.atmax.id/notes/" target="blank" class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white">
+              <span class="font-semibold">Penasaran Cek</span>
+              <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
+            </a>
+          </div>
+        </article>
+<!-- Akhir Kartu ke1 -->
+        
+<!-- Kartu ke2 -->
+        <article class="glassx rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
+          <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#c6ff57"></div>
+          <div class="relative z-10">
+            <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
+              <span class="icon w-5 h-5 grid place-items-center text-slate-700">
+                <!-- Ikon Handshake (Heroicon) -->
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+</svg>
+              </span>
+              <span class="badge">Ai Generator</span>
+            </span>
+            <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight">Itungan Patungan v1</h3>
+            <p class="mt-4 text-slate-800/90">Tools buat hitung jumlah yang harus dibayar dari patungan struk / bon.</p>
+            <a href="https://sandbox.atmax.id/itungpatungan/" target="blank" class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white">
+              <span class="font-semibold">Penasaran Cek</span>
+              <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
+            </a>
+          </div>
+        </article>
+<!-- Akhir Kartu ke2 -->
+
+        <!-- Kartu ke3 -->
+        <article class="glassx rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
+          <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#4138d0"></div>
+          <div class="relative z-10">
+            <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
+              <span class="icon w-5 h-5 grid place-items-center text-slate-700">
+                <!-- Ikon Tiket (Heroicon) -->
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672Zm-7.518-.267A8.25 8.25 0 1 1 20.25 10.5M8.288 14.212A5.25 5.25 0 1 1 17.25 10.5" />
+</svg>
+              </span>
+              <span class="badge">Tools</span>
+            </span>
+            <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight">ShortUrl v1</h3>
+            <p class="mt-4 text-slate-800/90">Tools buat bikin Short Url yang pokoknya simple abis!</p>
+            <a href="https://sandboxx.atmax.id/shorturl/" target="blank" class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white">
+              <span class="font-semibold">Penasaran Cek</span>
+              <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
+            </a>
+          </div>
+        </article>
+<!-- Akhir Kartu ke3 -->
+
+        <!-- Kartu ke4 -->
+        <article class="glassx rounded-[28px] p-8 md:p-10 border relative overflow-hidden transition">
+          <div class="colorLayer absolute inset-0 -z-20 rounded-[28px]" style="background:#ff3c74"></div>
+          <div class="relative z-10">
+            <span class="inline-flex items-center gap-2 text-sm bg-white/70 backdrop-blur px-4 py-2 rounded-full">
+              <span class="icon w-5 h-5 grid place-items-center text-slate-700">
+                <!-- Ikon Handshake (Heroicon) -->
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+</svg>
+              </span>
+              <span class="badge">Ai Generator</span>
+            </span>
+            <h3 class="mt-6 text-2xl md:text-3xl font-extrabold tracking-tight">GeoScanner v1</h3>
+            <p class="mt-4 text-slate-800/90">Sebuah alat untuk mencari lokasi dari gambar/foto atau bisa juga digunakan permainan Geoguessr.</p>
+            <a href="https://sandbox.atmax.id/geoscanner/" target="blank" class="btn mt-6 inline-flex items-center gap-3 bg-white/80 backdrop-blur px-5 py-2.5 rounded-full hover:bg-white">
+              <span class="font-semibold">Penasaran Cek</span>
+              <span class="grid place-items-center w-9 h-9 rounded-full bg-neutral-900 text-white">→</span>
+            </a>
+          </div>
+        </article>
+<!-- Akhir Kartu ke4 -->
+        
+      </div>
+    </div>
+  </section>
+
+  <footer class="py-10 border-t">
+    <div class="max-w-6xl mx-auto px-6 flex justify-between text-sm">
+      <p>© 2025 sandbox.atmax.id</p>
+      <div class="flex gap-3"><a href="#">Kebijakan Privasi</a><a href="#">Kontak</a></div>
+    </div>
+  </footer>
+
+  <script>
+    // Menambahkan event listener untuk hover
+    const cards = document.querySelectorAll('#cardsGrid article');
     
-    <!-- HERO SECTION (Area Tengah) -->
-    <div class="flex-1 flex items-center overflow-hidden mb-[250px] md:mb-[200px]">
-      <div class="scrolling-container">
-        <div class="scrolling-wrapper">
-          <img src="https://i.gifer.com/origin/99/99d01a70dbd6759c794185f7194da575_w200.gif" 
-               class="w-20 h-20 md:w-32 md:h-32 object-contain" 
-               alt="GIF Animation">
-          <span>
-            Selamat datang di website ini. Ruang ini saya dedikasikan sebagai tempat 
-            untuk bereksperimen, menjelajahi teknologi, sekaligus menyalurkan hobi. 
-            Setiap karya dan ide yang saya hadirkan merupakan bagian dari perjalanan 
-            eksplorasi dan pembelajaran berkelanjutan. Saya percaya kolaborasi dapat 
-            menghadirkan nilai yang lebih besar. Mari bekerja sama —
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- BOTTOM SECTION (Dipaksa menempel di dasar absolut) -->
-    <div class="bottom-section-wrapper">
-      <!-- LINKS SECTION -->
-      <div class="px-6 md:px-16 py-8 border-t border-[#222222] text-sm flex flex-col md:flex-row justify-between items-end gap-8 w-full">
-        <div class="flex flex-col space-y-3 w-full md:w-auto text-left">
-          <a href="https://dsgn.atmax.id" target="_blank" class="flex items-center space-x-2 text-[#eeeae8] hover:underline group">
-            <span>atmaxdsgn</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <line x1="17" y1="7" x2="7" y2="17" />
-              <polyline points="8 7 17 7 17 16" />
-            </svg>
-          </a>
-          <a href="https://sandbox.atmax.id" target="_blank" class="flex items-center space-x-2 text-[#eeeae8] hover:underline group">
-            <span>atmaxsandbox</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <line x1="17" y1="7" x2="7" y2="17" />
-              <polyline points="8 7 17 7 17 16" />
-            </svg>
-          </a>
-          <a href="https://digistore.atmax.id" target="_blank" class="flex items-center space-x-2 text-[#eeeae8] hover:underline group">
-            <span>atmaxdigistore</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <line x1="17" y1="7" x2="7" y2="17" />
-              <polyline points="8 7 17 7 17 16" />
-            </svg>
-          </a>
-          <a href="mailto:hello@atmax.id" class="pt-4 text-[#eeeae8] hover:underline block">
-            hello@atmax.id
-          </a>
-        </div>
-
-        <div class="md:max-w-xs text-right md:text-left">
-          <p class="leading-relaxed italic opacity-80">
-            "Setiap tempat yang kita singgahi, setiap pengalaman baru yang kita temui, 
-            memberi bahan bakar bagi imajinasi kita. Dari sanalah kreativitas lahir."
-          </p>
-        </div>
-      </div>
-
-      <!-- FOOTER -->
-      <footer class="flex justify-between items-center px-6 md:px-16 py-5 border-t border-[#222222] text-xs uppercase tracking-widest opacity-60 w-full">
-        <span>© atmax 2025</span>
-        <a href="#" class="hover:underline flex items-center gap-1">
-          <span>Top</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-          </svg>
-        </a>
-      </footer>
-    </div>
-  </div>
+    cards.forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        // Menambahkan efek blur pada kartu lainnya
+        document.querySelectorAll('#cardsGrid article').forEach(el => el.classList.add('dim'));
+        card.classList.remove('dim');  // Menghapus blur dari kartu yang di-hover
+      });
+      card.addEventListener('mouseleave', () => {
+        // Menghapus efek blur dari semua kartu saat hover hilang
+        document.querySelectorAll('#cardsGrid article').forEach(el => el.classList.remove('dim'));
+      });
+    });
+  </script>
 </body>
 </html>
