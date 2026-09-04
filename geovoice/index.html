@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoVoiceRoom - GeoGuessr Voice Extension</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .bg-dot-pattern {
+            background-image: radial-gradient(rgba(139, 92, 246, 0.15) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(-1deg); }
+            50% { transform: translateY(-5px) rotate(1deg); }
+        }
+        @keyframes floatFast {
+            0%, 100% { transform: translateY(0px) rotate(1deg); }
+            50% { transform: translateY(-6px) rotate(-1deg); }
+        }
+        .animate-float-1 { animation: floatSlow 6s ease-in-out infinite; }
+        .animate-float-2 { animation: floatFast 5s ease-in-out infinite; }
+    </style>
+</head>
+<body class="bg-[#faf9f5] text-slate-950 font-sans antialiased overflow-x-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- Header Minimalis -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-[#faf9f5]/80 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+                <img src="https://geovoice.hostmora.app/img/icon-geovoice.png" alt="GeoVoice Logo" class="w-9 h-9 object-contain">
+                <span class="font-black tracking-tight text-lg text-slate-900">GeoVoice<span class="text-brand-600">Room</span></span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="how-to-install.html" class="text-xs font-bold text-slate-700 hover:text-brand-600 transition">How to Install</a>
+                <a href="https://drive.google.com/uc?id=10vQS4A1oWmWHS5WC8CAbDFRkLmuWSOvc" class="bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs px-5 py-2.5 rounded-full transition shadow-md shadow-brand-600/20">
+                    Get Chrome Extension
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout Utama -->
+    <section class="min-h-screen pt-24 pb-16 px-6 bg-dot-pattern flex flex-col items-center justify-center">
+        
+        <div class="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center my-auto">
+            
+            <!-- KOLOM KIRI: Gambar 1 -->
+            <div class="lg:col-span-3 flex flex-col items-center animate-float-1">
+                <div class="w-full rounded-2xl overflow-hidden shadow-2xl cursor-pointer group" onclick="openModal(0)">
+                    <img src="https://geovoice.hostmora.app/img/1.png" alt="GeoVoiceRoom 1" class="w-full h-auto object-cover group-hover:scale-105 transition duration-500">
+                </div>
+                <span class="text-xs font-bold text-slate-800 mt-2 bg-white/90 backdrop-blur-xs px-3 py-1.5 rounded-xl shadow-md text-center">In-Match HUD Integration</span>
+            </div>
+
+            <!-- KOLOM TENGAH: Teks & Gambar 3 -->
+            <div class="lg:col-span-6 flex flex-col items-center text-center py-4 px-2">
+                <div class="inline-flex items-center space-x-2 bg-white border border-brand-200 px-4 py-1.5 rounded-full text-xs font-semibold text-brand-600 shadow-sm mb-4">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                    <span>GEOGUESSR PARTY & TEAM DUELS EXTENSION</span>
+                </div>
+                
+                <h1 class="text-3xl md:text-5xl font-black tracking-tight text-slate-900 mb-4 leading-tight">
+                    Communicate directly while playing <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-indigo-600 underline decoration-brand-300 decoration-wavy">GeoGuessr</span>
+                </h1>
+                
+                <p class="text-sm md:text-base text-slate-600 mb-6 leading-relaxed">
+                    Interact with your teammates or other players effortlessly. Share information, discuss locations, and coordinate your next move without leaving the match.
+                </p>
+
+                <div id="download" class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+                    <a href="https://drive.google.com/uc?id=10vQS4A1oWmWHS5WC8CAbDFRkLmuWSOvc" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white font-bold px-8 py-4 rounded-full transition shadow-xl shadow-brand-600/25 flex items-center justify-center space-x-3 text-sm">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Download Chrome Extension</span>
+                    </a>
+                </div>
+
+                <!-- GAMBAR 3 -->
+                <div class="w-full max-w-md animate-float-2">
+                    <div class="w-full rounded-2xl overflow-hidden shadow-2xl cursor-pointer group" onclick="openModal(2)">
+                        <img src="https://geovoice.hostmora.app/img/3.png" alt="GeoVoiceRoom 3" class="w-full h-auto object-cover group-hover:scale-105 transition duration-500">
+                    </div>
+                    <p class="text-xs font-bold text-slate-800 mt-2 text-center bg-white/90 backdrop-blur-xs py-1.5 px-3 rounded-xl shadow-md inline-block w-full">Team Duels Controller & Voice Sync</p>
+                </div>
+            </div>
+
+            <!-- KOLOM KANAN: Gambar 2 -->
+            <div class="lg:col-span-3 flex flex-col items-center animate-float-2">
+                <div class="w-full rounded-2xl overflow-hidden shadow-2xl cursor-pointer group" onclick="openModal(1)">
+                    <img src="https://geovoice.hostmora.app/img/2.png" alt="GeoVoiceRoom 2" class="w-full h-auto object-cover group-hover:scale-105 transition duration-500">
+                </div>
+                <p class="text-xs font-bold text-slate-800 mt-2 text-center bg-white/90 backdrop-blur-xs py-1.5 px-3 rounded-xl shadow-md inline-block w-full">Party Mode Collaboration</p>
+            </div>
+
+        </div>
+
+        <!-- Disclaimer di Tengah Paling Bawah -->
+        <div class="max-w-xl mx-auto text-center mt-12 px-4">
+            <p class="text-[9px] text-slate-400 leading-relaxed">
+                <span class="font-bold text-slate-500">⚠️ Disclaimer:</span> Use this extension at your own risk. Features may interact with or modify the way GeoGuessr works and could potentially violate the platform's rules or terms of service. Any risk of warnings, restrictions, suspension, or account bans is entirely the user's responsibility.
+            </p>
+        </div>
+
+    </section>
+
+    <!-- Modal Popup Center, Blur Background, Gambar Dibuat 60% Layar -->
+    <div id="imageModal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-2xl hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        
+        <!-- Tombol Close di Pojok Kanan Atas -->
+        <button onclick="closeModal()" class="absolute top-6 right-6 z-50 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+
+        <!-- Tombol Panah Kiri -->
+        <button onclick="prevImage(event)" class="absolute left-4 md:left-8 z-50 w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md">
+            <i class="fa-solid fa-chevron-left text-xl md:text-2xl"></i>
+        </button>
+
+        <!-- Konten Gambar di Tengah dengan Lebar & Tinggi Tepat 60% Layar -->
+        <div class="w-[60vw] h-[60vh] flex flex-col items-center justify-center relative" onclick="event.stopPropagation()">
+            <img id="modalImage" src="" alt="Zoomed Preview" class="w-full h-full object-contain rounded-2xl shadow-2xl">
+            <div class="mt-3 text-center absolute -bottom-10">
+                <h3 id="modalTitle" class="font-bold text-white text-sm md:text-lg tracking-wide bg-black/60 px-5 py-2 rounded-full backdrop-blur-md inline-block">Title</h3>
+                <p id="modalCounter" class="text-xs text-slate-300 mt-1 font-medium">1 / 3</p>
+            </div>
+        </div>
+
+        <!-- Tombol Panah Kanan -->
+        <button onclick="nextImage(event)" class="absolute right-4 md:right-8 z-50 w-12 h-12 md:w-16 md:h-16 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md">
+            <i class="fa-solid fa-chevron-right text-xl md:text-2xl"></i>
+        </button>
+
+    </div>
+
+    <!-- Footer Ringkas -->
+    <footer class="py-6 bg-white border-t border-slate-200 text-center text-slate-500 text-xs">
+        <p>GeoVoiceRoom &copy; 2026. Unofficial community utility script for GeoGuessr.</p>
+    </footer>
+
+    <!-- Script Modal Popup -->
+    <script>
+        const gallery = [
+            { src: "https://geovoice.hostmora.app/img/1.png", title: "In-Match HUD Integration" },
+            { src: "https://geovoice.hostmora.app/img/2.png", title: "Party Mode Collaboration" },
+            { src: "https://geovoice.hostmora.app/img/3.png", title: "Team Duels Controller & Voice Sync" }
+        ];
+
+        let currentIndex = 0;
+        const modal = document.getElementById('imageModal');
+        const modalImage = document.getElementById('modalImage');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalCounter = document.getElementById('modalCounter');
+
+        function updateModalContent() {
+            modalImage.src = gallery[currentIndex].src;
+            modalTitle.textContent = gallery[currentIndex].title;
+            modalCounter.textContent = `${currentIndex + 1} / ${gallery.length}`;
+        }
+
+        function openModal(index) {
+            currentIndex = index;
+            updateModalContent();
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function nextImage(e) {
+            e.stopPropagation();
+            currentIndex = (currentIndex + 1) % gallery.length;
+            updateModalContent();
+        }
+
+        function prevImage(e) {
+            e.stopPropagation();
+            currentIndex = (currentIndex - 1 + gallery.length) % gallery.length;
+            updateModalContent();
+        }
+
+        // Tutup modal ketika klik di luar gambar
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (!modal.classList.contains('hidden')) {
+                if (e.key === 'Escape') closeModal();
+                if (e.key === 'ArrowRight') nextImage(e);
+                if (e.key === 'ArrowLeft') prevImage(e);
+            }
+        });
+    </script>
+
+</body>
+</html>
