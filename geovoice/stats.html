@@ -1,34 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GeoVoice Stats</title>
+    <!-- Gunakan Script Supabase UMD resmi -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
-<body style="font-family: sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
-    <div style="background: rgba(30, 41, 59, 0.8); padding: 30px; border-radius: 16px; border: 1px solid #a855f7; text-align: center;">
-        <h2 style="margin: 0 0 10px 0; color: #cbd5e1;">Total Instalasi GeoVoice</h2>
-        <div id="count" style="font-size: 48px; font-weight: bold; color: #34d399;">Loading...</div>
+<body style="font-family: system-ui, sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+    
+    <div style="background: rgba(30, 41, 59, 0.9); padding: 30px; border-radius: 16px; border: 1px solid rgba(168, 85, 247, 0.4); text-align: center; min-width: 240px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+        <h3 style="margin: 0 0 10px 0; color: #94a3b8; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Total Instalasi GeoVoice</h3>
+        <div id="count" style="font-size: 48px; font-weight: bold; color: #34d399;">...</div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-client@2"></script>
     <script>
         const SUPABASE_URL = "https://pcmrfidgxfhfdfqzxwum.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbXJmaWRneGZoZmRmcXp4d3VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxNTM3NDUsImV4cCI6MjEwMzcyOTc0NX0.9GJfG6L8TWfD77ja0iXU-DUJhryxBmTzQRSa7739x0Y";
         
-        const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        async function loadCount() {
+            const countEl = document.getElementById('count');
+            try {
+                // Inisialisasi via supabase.createClient dari unpkg
+                const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                
+                const { count, error } = await client
+                    .from('installations')
+                    .select('*', { count: 'exact', head: true });
 
-        async function getCount() {
-            const { count, error } = await client
-                .from('installations')
-                .select('*', { count: 'exact', head: true });
-            
-            if (!error) {
-                document.getElementById('count').innerText = count;
-            } else {
-                document.getElementById('count').innerText = "Error";
+                if (error) {
+                    console.error("Supabase Error:", error);
+                    countEl.innerText = "Error";
+                    countEl.style.color = "#ef4444";
+                } else {
+                    countEl.innerText = count !== null ? count : 0;
+                }
+            } catch (err) {
+                console.error("JS Error:", err);
+                countEl.innerText = "Failed";
+                countEl.style.color = "#ef4444";
             }
         }
 
-        getCount();
+        window.addEventListener('DOMContentLoaded', loadCount);
     </script>
 </body>
 </html>
