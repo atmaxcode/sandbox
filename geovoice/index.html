@@ -58,8 +58,8 @@
                     kofiwidget2.draw();
                 </script>
 
-                <a href="https://saweria.co/atmax" target="_blank" rel="noopener noreferrer" class="kofi-button custom-saweria-btn" style="background-color: #faae2b !important;">
-                    <img src="http://cdn-sdotid.adg.id/images/be7c7a82-45c3-44d0-be97-6ee85ed98903_382x382.png" alt="Saweria" style="height: 12px; width: auto; vertical-align: middle; display: inline-block;">
+                <a href="https://saweria.co/atmax" target="_blank" rel="noopener noreferrer" class="custom-kofi-btn" style="background-color: #faae2b !important;">
+                    <img src="http://cdn-sdotid.adg.id/images/be7c7a82-45c3-44d0-be97-6ee85ed98903_382x382.png" alt="Saweria">
                     Tip me Saweria
                 </a>
 
@@ -67,20 +67,36 @@
                     .kofi-widget-container, 
                     .kofi-widget-container iframe, 
                     a.kofi-button, 
-                    .btn-container {
+                    .btn-container,
+                    .custom-kofi-btn {
                         border-radius: 12px !important;
                         overflow: hidden !important;
                     }
-                    a.kofi-button {
+                    .custom-kofi-btn {
                         display: inline-flex !important;
                         align-items: center !important;
-                        gap: 6px !important;
+                        justify-content: center !important;
+                        gap: 5px !important;
+                        font-family: "Numans", Helvetica, Arial, sans-serif !important;
+                        font-size: 14px !important;
+                        font-weight: bold !important;
+                        color: #fff !important;
+                        text-decoration: none !important;
+                        padding: 4px 12px !important;
+                        height: 34px !important;
+                        box-sizing: border-box !important;
+                        box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
+                        transition: all 0.2s ease !important;
                     }
-                    .custom-saweria-btn {
-                        transform: scale(0.85);
-                        transform-origin: right center;
-                        margin-left: -6px;
-                        margin-right: -6px;
+                    .custom-kofi-btn:hover {
+                        opacity: 0.9 !important;
+                    }
+                    .custom-kofi-btn img {
+                        height: 15px !important;
+                        width: auto !important;
+                        display: inline-block !important;
+                        vertical-align: middle !important;
+                        margin: 0 !important;
                     }
                 </style>
             </div>
